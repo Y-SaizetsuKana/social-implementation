@@ -1,6 +1,6 @@
 # models.py
 import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, REAL
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, REAL, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base 
 
@@ -42,9 +42,10 @@ class FoodLossRecord(Base):
     weight_grams = Column(REAL, nullable=False)
     # 外部キー（FOREIGN KEY）を定義し、LossReasonテーブルのidを参照します
     loss_reason_id = Column(Integer, ForeignKey('loss_reasons.id'))
-    # record_dateは日時を記録します
-    record_date = Column(String(255), nullable=False, default=datetime.datetime.now)
-
+    # record_date の定義を修正
+    # ただし、データベースには 'TEXT'型として定義されているため、以下のように 'String' 型を維持しつつ値を設定するのが簡単です。
+    record_date = Column(String(255), nullable=False, default=lambda: datetime.datetime.now().isoformat())
+    
     # ユーザーと廃棄理由への関係性を定義します
     user = relationship("User", back_populates="records")
     reason = relationship("LossReason", back_populates="records")

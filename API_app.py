@@ -1,25 +1,26 @@
 from flask import Flask, render_template, jsonify, request
-
 app = Flask(__name__)
-#送信(バックエンド→フロントエンド)
+
+# ルート '/' にアクセスされたときに index.html を返す
 @app.route('/')
 def index():
-  return render_templete('index.html')
-
+  # 'render_templete' から 'render_template' へタイポを修正
+  return render_template('index.html')
+# '/get_data' へのPOSTリクエストでJSONデータを返す (バックエンド→フロントエンド)
 @app.route('/get_data', methods=['POST'])
 def get_data():
   data_from_python = {'message': 'Output Data'}
   return jsonify(data_from_python)
 
-if __name__ == '__main__':
-  app.run(debug = True)
-  
-#受信(フロントエンド→バックエンド)
+
+# '/receive_data' へのPOSTリクエストでデータを受信する (フロントエンド→バックエンド)
 @app.route('/receive_data', methods=['POST'])
 def receive_data():
   data_from_js = request.json
-  print('Front End', data_from_js)
-  return jsonify({'message': 'Input Data'})
-
+  received_message = data_from_js.get('message', 'メッセージがありません')
+  print(f"フロントエンドから受信: '{received_message}'")
+  # 受信成功のレスポンスを返す
+  return jsonify({'status': 'success', 'reply': f"「{received_message}」を受け取りました！"})
+# アプリケーションの実行
 if __name__ == '__main__':
   app.run(debug = True)

@@ -83,7 +83,8 @@ def add_loss_record():
             item_name=item_name,
             weight_grams=weight_grams,
             loss_reason_id=reason.id,
-            record_date=datetime.datetime.now().isoformat()
+            # たぶん使わない
+            # record_date=datetime.datetime.now().isoformat()
         )
         
         db.add(new_record)
