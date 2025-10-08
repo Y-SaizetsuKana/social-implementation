@@ -1,19 +1,28 @@
 # app.py
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 from database import init_db, get_db
 from models import User, LossReason, FoodLossRecord
 import datetime
 import hashlib
 import json
 
-app = Flask(__name__)
-
+app = Flask(__name__,
+            template_folder='../templates',
+            static_folder='../static')
 # アプリケーション起動時にデータベースを初期化
 init_db()
 
 @app.route("/")
+def index():
+    return render_template('account.html')
+
+@app.route("/home")
 def home():
-    return "Hello, this is the Food Loss App Backend!"
+    return render_template('home.html')
+
+@app.route("/input")
+def input():
+    return render_template('input.html')
 
 @app.route("/api/register_user", methods=["POST"])
 def register_user():
@@ -86,6 +95,20 @@ def add_loss_record():
         return jsonify({"message": f"An error occurred: {str(e)}"}), 500
     finally:
         db.close()
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # ここでユーザー名とパスワードのチェックを行う（今回は省略）
+        username = request.form.get('username')
+        
+        if username: # ログイン成功とみなす 
+            return redirect(url_for('home'))
+        else:
+            # ログイン失敗
+            return "ログインに失敗しました"
+            
+    return render_template('account.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

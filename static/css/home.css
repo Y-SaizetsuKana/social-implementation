@@ -1,0 +1,43 @@
+header p{
+    text-align: center;
+}
+ul{
+    padding: 0;
+    display: flex;
+    list-style: none;
+}
+li{
+    margin: auto;
+}
+/* フッター */
+footer {
+    width: 100%;
+    background-color: darkred;
+    color: whitesmoke;
+    position: fixed;
+    bottom: 0; /*下に固定*/
+}
+
+.footer-menu {
+    height: 60px;
+}
+
+.footer-menu-list {
+    list-style: none;
+    text-align: center;
+    line-height: 60px;
+    display: flex;
+}
+
+.footer-menu-list li {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 60px;
+        width: 120px;
+        border-right: 1px solid whitesmoke;
+}
+
+footer p{
+    text-align: center;
+}
