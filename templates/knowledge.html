@@ -4,23 +4,18 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/knowledge.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}" />
     <title>テストWebアプリ</title>
 </head>
 <body>
     <header>
-    <p>豆知識</p>
-    <ul>
-        {% for date in past_week %}
-        <li>
-            <a href="{{ url_for('view_log', date_str=date.isoformat()) }}">{{ date.strftime('%Y年%m月%d日 (%a)') }}</a>
-        </li>
-        {% endfor %}
-    </ul>
+        <h1>豆知識</h1>
     </header>
+
     <main>
-    <h2>履歴</h2>
-    <h2>ポイント</h2>
+        <div class="textBox" data-title="アレンジレシピ">アレンジレシピアレンジレシピアレンジレシピアレンジレシピアレンジレシピ</div>
+        <div class="textBox" data-title="豆知識">豆知識豆知識豆知識豆知識豆知識豆知識豆知識</div>
     </main>
     <footer>
     <div class="footer-menu">

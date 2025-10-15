@@ -4,24 +4,34 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/log.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}" />
     <title>テストWebアプリ</title>
 </head>
 <body>
-    <header>
-    <p>記録</p>
-    <ul>
-        {% for date in past_week %}
-        <li>
-            <a href="{{ url_for('view_log', date_str=date.isoformat()) }}">{{ date.strftime('%Y年%m月%d日 (%a)') }}</a>
-        </li>
-        {% endfor %}
-    </ul>
-    </header>
-    <main>
-    <h2>履歴</h2>
-    <h2>ポイント</h2>
-    </main>
+
+    <div class="container">
+        <header class="header">
+            <a href="{{ url_for('log', date=prev_week) }}">前週</a>
+            <h3>{{ week_range }}</h3>
+            <a href="{{ url_for('log', date=next_week) }}">次週</a>
+        </header>
+        <nav class="week-nav">
+            {% for day in week_dates %}
+            <div class="day-selector {% if day.date == today %}active{% endif %}">
+                <span class="weekday">{{ day.weekday_jp }}</span>
+                <span class="day-num">{{ day.day_num }}</span>
+            </div>
+            {% endfor %}
+        </nav>
+
+        <main class="meal-cards">
+            <h1>ここに記録が表示されます。</h1>
+        </main>
+    </div>
+
+
+
     <footer>
     <div class="footer-menu">
         <ul class="footer-menu-list">
