@@ -5,23 +5,54 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}" />
     <title>テストWebアプリ</title>
 </head>
 <body>
-    <header>
-    <p>ホーム</p>
-    <ul>
-        {% for date in past_week %}
-        <li>
-            <a href="{{ url_for('view_log', date_str=date.isoformat()) }}">{{ date.strftime('%Y年%m月%d日 (%a)') }}</a>
-        </li>
-        {% endfor %}
-    </ul>
-    </header>
-    <main>
-    <h2>履歴</h2>
-    <h2>ポイント</h2>
-    </main>
+    <div class="container">
+        <header class="header">
+            <h3>今週です {{ week_range }}</h3>
+        </header>
+
+        <nav class="week-nav">
+            {% for day in week_dates %}
+            <div class="day-selector {% if day.date == today %}active{% endif %}">
+                <span class="weekday">{{ day.weekday_jp }}</span>
+                <span class="day-num">{{ day.day_num }}</span>
+            </div>
+            {% endfor %}
+        </nav>
+
+        <main class="meal-cards">
+            {% for day in week_dates %}
+                {% if day.date >= today and (day.date - today).days < 3 %}
+                <div class="card">
+                    <div class="card-header">
+                        <span class="date-highlight {% if day.date == today %}today-bg{% endif %}">{{ day.weekday_jp }}</span>
+                        {% if day.date == today %}
+                            <span class="today-label">今日</span>
+                        {% endif %}
+                        <span>{{ day.date.month }}月{{ day.date.day }}日</span>
+                        <i class="fas fa-bars"></i>
+                    </div>
+                    <div class="meal-slot">
+                        <span>朝</span>
+                        <p>食事を記録しましょう！</p>
+                    </div>
+                    <div class="meal-slot">
+                        <span>昼</span>
+                        <p>食事を記録しましょう！</p>
+                    </div>
+                    <div class="meal-slot">
+                        <span>夕</span>
+                        <p>食事を記録しましょう！</p>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </main>
+    </div>
+
     <footer>
     <div class="footer-menu">
         <ul class="footer-menu-list">

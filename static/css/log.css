@@ -1,3 +1,4 @@
+/* 基本設定 */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background-color: #f4f4f8;
@@ -113,14 +114,32 @@ body {
     color: #aaa;
     font-size: 0.9em;
 }
-header p{
-    text-align: center;
-}
-ul{
-    padding: 0;
+
+/* ボトムナビゲーション */
+.bottom-nav {
     display: flex;
-    list-style: none;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    border-top: 1px solid #e0e0e0;
+    padding: 10px 0;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
 }
-li{
-    margin: auto;
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.7em;
+    color: #888;
+}
+.nav-item i {
+    font-size: 1.5em;
+    margin-bottom: 4px;
+}
+.nav-item.active {
+    color: #007bff; /* アクティブな項目の色 */
 }

@@ -4,72 +4,13 @@
     <meta charset="UTF-8">
     <title>データ</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/input.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}" />
 </head>
 <body>
-    <h1>テストWebアプリ</h1>
-    <h1>入力データ</h1>
+    <h2>今日({{ today }})のデータを入力</h2>
     <div class="container">
         <form method="post">
             <table class="my-table">
-                <tr>
-                    <td rowspan="5">一食目</td>
-                </tr>
-                <tr>
-                    <td><input type="text" name="dish1" placeholder="料理名" /></td>
-                    <td rowspan="4"><button type="submit">送信</button></td>
-                </tr>
-                <tr>
-                    <td><input type="text" name="waste1" placeholder="廃棄物" /></td>
-                </tr>
-                <tr>
-                    <td><input type="number" name="amount1" placeholder="廃棄量[g]" /></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="reason-options">
-                            <p><strong>廃棄理由:</strong></p>
-                            <input type="radio" id="reason1-opt1" name="reason1" value="期限切れ" required>
-                            <label for="reason1-opt1">期限切れ</label><br>
-                            <input type="radio" id="reason1-opt2" name="reason1" value="調理中の廃棄">
-                            <label for="reason1-opt2">調理中の廃棄</label><br>
-                            <input type="radio" id="reason1-opt3" name="reason1" value="料理後の廃棄">
-                            <label for="reason1-opt3">料理後の廃棄</label>
-                            <input type="radio" id="reason1-opt4" name="reason1" value="その他">
-                            <label for="reason1-opt4">その他</label>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td rowspan="5">二食目</td>
-                </tr>
-                <tr>
-                    <td><input type="text" name="dish1" placeholder="料理名" /></td>
-                    <td rowspan="4"><button type="submit">送信</button></td>
-                </tr>
-                <tr>
-                    <td><input type="text" name="waste1" placeholder="廃棄物" /></td>
-                </tr>
-                <tr>
-                    <td><input type="number" name="amount1" placeholder="廃棄量[g]" /></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="reason-options">
-                            <p><strong>廃棄理由:</strong></p>
-                            <input type="radio" id="reason1-opt1" name="reason1" value="期限切れ" required>
-                            <label for="reason1-opt1">期限切れ</label><br>
-                            <input type="radio" id="reason1-opt2" name="reason1" value="調理中の廃棄">
-                            <label for="reason1-opt2">調理中の廃棄</label><br>
-                            <input type="radio" id="reason1-opt3" name="reason1" value="料理後の廃棄">
-                            <label for="reason1-opt3">料理後の廃棄</label>
-                            <input type="radio" id="reason1-opt4" name="reason1" value="その他">
-                            <label for="reason1-opt4">その他</label>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td rowspan="5">三食目</td>
-                </tr>
                 <tr>
                     <td><input type="text" name="dish1" placeholder="料理名" /></td>
                     <td rowspan="4"><button type="submit">送信</button></td>
@@ -98,12 +39,10 @@
             </table>
         </form>
 
-    <a href="{{ url_for('home') }}">ホームに戻る</a>
-
     <script src="{{ url_for('static', filename='js/input.js') }}"></script>
     </div>
 
-
+    <footer>
     <div class="footer-menu">
         <ul class="footer-menu-list">
         <li>

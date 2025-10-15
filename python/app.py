@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import json
 
+
 app = Flask(__name__,
             template_folder='../templates',
             static_folder='../static')
@@ -20,13 +21,62 @@ def index():
 def home():
     return render_template('home.html')
 
+
 @app.route("/input")
 def input():
-    return render_template('input.html')
+    today = datetime.date.today()
+    return render_template('input.html',
+                           today=today)
 
 @app.route("/log")
 def log():
-    return render_template('log.html')
+    # --- 基準日の取得 ---
+    # URLのクエリパラメータから日付を取得しようと試みる
+    date_str = request.args.get('date')
+    
+    target_date = None
+    if date_str:
+        try:
+            # 文字列をdateオブジェクトに変換
+            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            # フォーマットが不正な場合は今日の日付を使用
+            target_date = datetime.date.today()
+    else:
+        # パラメータがなければ今日の日付を使用
+        target_date = datetime.date.today()
+
+    # --- 週の計算 ---
+    # 基準日をもとに、その週の日曜日を計算
+    start_of_week = target_date - datetime.timedelta(days=(target_date.weekday() + 1) % 7)
+    end_of_week = start_of_week + datetime.timedelta(days=6)
+
+    # --- 1週間分の日付リストを作成 ---
+    week_dates = []
+    jp_weekdays = ["日", "月", "火", "水", "木", "金", "土"]
+    for i in range(7):
+        current_day = start_of_week + datetime.timedelta(days=i)
+        week_dates.append({
+            "date": current_day,
+            "day_num": current_day.day,
+            "weekday_jp": jp_weekdays[(current_day.weekday() + 1) % 7]
+        })
+
+    # --- 前週と次週の日付を計算 ---
+    # 表示している週の日曜から7日前と7日後を計算
+    prev_week_date = start_of_week - datetime.timedelta(days=7)
+    next_week_date = start_of_week + datetime.timedelta(days=7)
+
+    # --- 表示用の日付範囲を作成 ---
+    week_range_str = f"{start_of_week.month}月{start_of_week.day}日 〜 {end_of_week.month}月{end_of_week.day}日"
+
+    # HTMLテンプレートにデータを渡してレンダリング
+    return render_template('log.html',
+                           today=datetime.date.today(), # 「今日」をハイライトするために別途渡す
+                           week_dates=week_dates,
+                           week_range=week_range_str,
+                           prev_week=prev_week_date.strftime('%Y-%m-%d'),
+                           next_week=next_week_date.strftime('%Y-%m-%d'))
 
 @app.route("/points")
 def points():
@@ -73,6 +123,7 @@ def register_user():
     finally:
         db.close()
 
+    
 # 廃棄記録を追加するAPI
 @app.route("/api/add_loss_record", methods=["POST"])
 def add_loss_record():
@@ -121,7 +172,7 @@ def login():
         username = request.form.get('username')
         
         if username: # ログイン成功とみなす 
-            return redirect(url_for('home'))
+            return redirect(url_for('log'))
         else:
             # ログイン失敗
             return "ログインに失敗しました"

@@ -1,0 +1,50 @@
+/* フッター */
+html{
+    padding-bottom: 10em;
+}
+footer {
+    width: 100%;
+    background-color: darkred;
+    color: whitesmoke;
+    position: fixed;
+    bottom: 0; /*下に固定*/
+}
+
+.footer-menu {
+    height: 60px;
+}
+
+.footer-menu-list {
+    list-style: none;
+    text-align: center;
+    line-height: 60px;
+    display: flex;
+    justify-content: center;
+}
+
+.footer-menu-list li {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+    width: 120px;
+    border-right: 1px solid whitesmoke;
+}
+.footer-menu-list li:last-child {
+    border-right: none;
+}
+
+footer p{
+    text-align: center;
+}
+
+footer a{
+    color: whitesmoke;
+    text-decoration: none;
+}
+
+footer a.hover {
+    text-decoration: underline;
+}
+
+/* ここまでフッター */ 
