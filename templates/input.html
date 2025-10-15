@@ -28,12 +28,14 @@
                     <td>
                         <div class="reason-options">
                             <p><strong>廃棄理由:</strong></p>
-                            <input type="radio" id="reason1-opt1" name="reason1" value="味が合わなかった" required>
-                            <label for="reason1-opt1">味が合わなかった</label><br>
-                            <input type="radio" id="reason1-opt2" name="reason1" value="量が多かった">
-                            <label for="reason1-opt2">量が多かった</label><br>
-                            <input type="radio" id="reason1-opt3" name="reason1" value="その他">
-                            <label for="reason1-opt3">その他</label>
+                            <input type="radio" id="reason1-opt1" name="reason1" value="期限切れ" required>
+                            <label for="reason1-opt1">期限切れ</label><br>
+                            <input type="radio" id="reason1-opt2" name="reason1" value="調理中の廃棄">
+                            <label for="reason1-opt2">調理中の廃棄</label><br>
+                            <input type="radio" id="reason1-opt3" name="reason1" value="料理後の廃棄">
+                            <label for="reason1-opt3">料理後の廃棄</label>
+                            <input type="radio" id="reason1-opt4" name="reason1" value="その他">
+                            <label for="reason1-opt4">その他</label>
                         </div>
                     </td>
                 </tr>
@@ -54,12 +56,14 @@
                     <td>
                         <div class="reason-options">
                             <p><strong>廃棄理由:</strong></p>
-                            <input type="radio" id="reason1-opt1" name="reason1" value="味が合わなかった" required>
-                            <label for="reason1-opt1">味が合わなかった</label><br>
-                            <input type="radio" id="reason1-opt2" name="reason1" value="量が多かった">
-                            <label for="reason1-opt2">量が多かった</label><br>
-                            <input type="radio" id="reason1-opt3" name="reason1" value="その他">
-                            <label for="reason1-opt3">その他</label>
+                            <input type="radio" id="reason1-opt1" name="reason1" value="期限切れ" required>
+                            <label for="reason1-opt1">期限切れ</label><br>
+                            <input type="radio" id="reason1-opt2" name="reason1" value="調理中の廃棄">
+                            <label for="reason1-opt2">調理中の廃棄</label><br>
+                            <input type="radio" id="reason1-opt3" name="reason1" value="料理後の廃棄">
+                            <label for="reason1-opt3">料理後の廃棄</label>
+                            <input type="radio" id="reason1-opt4" name="reason1" value="その他">
+                            <label for="reason1-opt4">その他</label>
                         </div>
                     </td>
                 </tr>
@@ -80,12 +84,14 @@
                     <td>
                         <div class="reason-options">
                             <p><strong>廃棄理由:</strong></p>
-                            <input type="radio" id="reason1-opt1" name="reason1" value="味が合わなかった" required>
-                            <label for="reason1-opt1">味が合わなかった</label><br>
-                            <input type="radio" id="reason1-opt2" name="reason1" value="量が多かった">
-                            <label for="reason1-opt2">量が多かった</label><br>
-                            <input type="radio" id="reason1-opt3" name="reason1" value="その他">
-                            <label for="reason1-opt3">その他</label>
+                            <input type="radio" id="reason1-opt1" name="reason1" value="期限切れ" required>
+                            <label for="reason1-opt1">期限切れ</label><br>
+                            <input type="radio" id="reason1-opt2" name="reason1" value="調理中の廃棄">
+                            <label for="reason1-opt2">調理中の廃棄</label><br>
+                            <input type="radio" id="reason1-opt3" name="reason1" value="料理後の廃棄">
+                            <label for="reason1-opt3">料理後の廃棄</label>
+                            <input type="radio" id="reason1-opt4" name="reason1" value="その他">
+                            <label for="reason1-opt4">その他</label>
                         </div>
                     </td>
                 </tr>
@@ -98,17 +104,26 @@
     </div>
 
 
-    <footer>
-        <div class="footer-menu">
-            <ul class="footer-menu-list">
-                <li><a href="{{ url_for('input')}}">入力</a></li>
-                <li>記録</li>
-                <li>知識</li>
-                <li>ポイント</li>
-                <li>アカウント</li>
-            </ul>
-        </div>
-        <p>テストWebアプリ</p>
+    <div class="footer-menu">
+        <ul class="footer-menu-list">
+        <li>
+            <a href="{{ url_for('input') }}">入力</a>
+        </li>
+        <li>
+            <a href="{{ url_for('log') }}">記録</a>
+        </li>
+        <li>
+            <a href="{{ url_for('knowledge') }}">豆知識</a>
+        </li>
+        <li>
+            <a href="{{ url_for('points') }}">ポイント</a>
+        </li>
+        <li>
+            <a href="{{ url_for('account') }}">アカウント</a>
+        </li>
+        </ul>
+    </div>
+    <p>テストWebアプリ</p>
     </footer>
 </body>
 </html>

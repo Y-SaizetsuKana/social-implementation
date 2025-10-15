@@ -14,7 +14,7 @@ init_db()
 
 @app.route("/")
 def index():
-    return render_template('account.html')
+    return render_template('login.html')
 
 @app.route("/home")
 def home():
@@ -23,6 +23,23 @@ def home():
 @app.route("/input")
 def input():
     return render_template('input.html')
+
+@app.route("/log")
+def log():
+    return render_template('log.html')
+
+@app.route("/points")
+def points():
+    return render_template('points.html')
+
+@app.route("/knowledge")
+def knowledge():
+    return render_template('knowledge.html')
+
+@app.route("/account")
+def account():
+    return render_template('account.html')
+
 
 @app.route("/api/register_user", methods=["POST"])
 def register_user():

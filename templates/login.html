@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login_style.css') }}">
+    <title>テストWebアプリ</title>
+</head>
+<body>
+    <form id="login" method="post" action="/login">
+        <h1>テストWebアプリ</h1>
+
+        <input type="email" id="email" name="email" placeholder="Email" />
+
+        <input type="password" id="password" name="password" placeholder="Password" />
+
+        <input type="password" id="password" name="password" placeholder="Password Again" />
+
+        <input type="text" id="username" name="username" placeholder="Username" />
+
+        <input type="number" id="members" name="members" placeholder="世帯人員" />
+
+        <input type="text" id="address" name="address" placeholder="住所" />
+        
+        <button type="submit" id="login-button">Login</button>
+    </form>
+</body>
+</html>
