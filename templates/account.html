@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}" />
@@ -19,6 +18,7 @@
         {% endfor %}
     </ul>
     </header>
+
     <main>
         <h3>アカウント情報</h3>
         <p>アカウント名</p>
@@ -27,27 +27,28 @@
         <p>家庭人数</p>
         <p>住所</p>
     </main>
-    <footer>
-    <div class="footer-menu">
-        <ul class="footer-menu-list">
-        <li>
-            <a href="{{ url_for('input') }}">入力</a>
-        </li>
-        <li>
-            <a href="{{ url_for('log') }}">記録</a>
-        </li>
-        <li>
-            <a href="{{ url_for('knowledge') }}">豆知識</a>
-        </li>
-        <li>
-            <a href="{{ url_for('points') }}">ポイント</a>
-        </li>
-        <li>
-            <a href="{{ url_for('account') }}">アカウント</a>
-        </li>
-        </ul>
-    </div>
-    <p>テストWebアプリ</p>
+
+    <footer class="bottom-nav">
+        <a href="{{ url_for('input') }}" class="nav-item {% if active_page == 'input' %}active{% endif %}">
+            <i class="fas fa-calendar-week"></i>
+            <span>入力</span>
+        </a>
+        <a href="{{ url_for('log') }}" class="nav-item {% if active_page == 'log' %}active{% endif %}">
+            <i class="fas fa-calendar-week"></i>
+            <span>記録</span>
+        </a>
+        <a href="{{ url_for('knowledge') }}" class="nav-item {% if active_page == 'knowledge' %}active{% endif %}">
+            <i class="fas fa-calendar-week"></i>
+            <span>豆知識</span>
+        </a>
+        <a href="{{ url_for('points') }}" class="nav-item {% if active_page == 'points' %}active{% endif %}">
+            <i class="fas fa-calendar-week"></i>
+            <span>ポイント</span>
+        </a>
+        <a href="{{ url_for('account') }}" class="nav-item {% if active_page == 'account' %}active{% endif %}">
+            <i class="fas fa-calendar-week"></i>
+            <span>アカウント</span>
+        </a>
     </footer>
 </body>
 </html>
