@@ -1,6 +1,9 @@
 # app.py (完成版)
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from database import init_db, get_db
+from flask import session
+from models import User, LossReason, FoodLossRecord
+from statistics import get_total_grams_for_weeks, get_last_two_weeks 
 from pydantic import ValidationError # ★ ValidationErrorをインポート
 from schemas import LossRecordInput # ★ LossRecordInputをインポート
 from services import ( 
@@ -146,6 +149,12 @@ def calculate_weekly_points_api():
     
     db = next(get_db())
     try:
+        today = datetime.now()
+        week_boundaries = get_last_two_weeks(today) # 今週と先週の境界
+
+        # --- 1. 週間の合計廃棄量を取得 ---
+        this_week_grams = get_total_grams_for_weeks(db, user_id, *week_boundaries["this_week"])
+        last_week_grams = get_total_grams_for_weeks(db, user_id, *week_boundaries["last_week"])
         # ★ Services層を呼び出し、ロジックを実行させる ★
         result = calculate_weekly_points_logic(db, user_id)
         
