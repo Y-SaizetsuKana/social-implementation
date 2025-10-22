@@ -130,3 +130,39 @@ def get_total_grams_for_weeks(db: Session, user_id: int, weeks_ago: int) -> floa
                       .scalar()
                       
     return total_grams or 0.0
+
+def get_last_two_weeks(db: Session, user_id: int) -> tuple[float, float]:
+    """
+    直近の2週間分の合計廃棄重量（グラム）を取得する。
+    戻り値は (先週の合計, 今週の合計) のタプル。
+    """
+    today = datetime.now()
+    
+    # 今週の月曜日と日曜日を取得
+    this_monday, this_sunday = get_week_boundaries(today)
+    
+    # 先週の月曜日と日曜日を計算
+    last_monday = this_monday - timedelta(weeks=1)
+    last_sunday = this_sunday - timedelta(weeks=1)
+    
+    # データベースのレコード日付は文字列（ISO 8601）
+    last_monday_str = last_monday.isoformat()
+    last_sunday_str = last_sunday.isoformat()
+    this_monday_str = this_monday.isoformat()
+    this_sunday_str = this_sunday.isoformat()
+    
+    # 先週の合計重量を取得
+    last_week_grams = db.query(func.sum(FoodLossRecord.weight_grams)) \
+                             .filter(FoodLossRecord.user_id == user_id) \
+                             .filter(FoodLossRecord.record_date >= last_monday_str) \
+                             .filter(FoodLossRecord.record_date <= last_sunday_str) \
+                             .scalar() or 0.0
+
+    # 今週の合計重量を取得
+    this_week_grams = db.query(func.sum(FoodLossRecord.weight_grams)) \
+                         .filter(FoodLossRecord.user_id == user_id) \
+                         .filter(FoodLossRecord.record_date >= this_monday_str) \
+                         .filter(FoodLossRecord.record_date <= this_sunday_str) \
+                         .scalar() or 0.0
+
+    return last_week_grams, this_week_grams

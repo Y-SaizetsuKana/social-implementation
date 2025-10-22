@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for
 from database import init_db, get_db
 from flask import session
 from models import User, LossReason, FoodLossRecord
-from statistics import get_total_grams_for_week, get_last_two_weeks 
+from statistics import get_total_grams_for_weeks, get_last_two_weeks 
 import datetime
 import hashlib
 
@@ -206,8 +206,8 @@ def calculate_weekly_points():
         week_boundaries = get_last_two_weeks(today) # 今週と先週の境界
 
         # --- 1. 週間の合計廃棄量を取得 ---
-        this_week_grams = get_total_grams_for_week(db, user_id, *week_boundaries["this_week"])
-        last_week_grams = get_total_grams_for_week(db, user_id, *week_boundaries["last_week"])
+        this_week_grams = get_total_grams_for_weeks(db, user_id, *week_boundaries["this_week"])
+        last_week_grams = get_total_grams_for_weeks(db, user_id, *week_boundaries["last_week"])
         
         # 過去4週間（先々週以前）の合計と平均を取得
         # 過去4週間の合計 (今週を含まない過去4週間、つまり last_week_grams を含めない)
