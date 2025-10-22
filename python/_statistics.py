@@ -1,26 +1,62 @@
-# statistics.py
+# statistics.py (修正案)
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from models import FoodLossRecord, LossReason # models.pyからインポート
 
+# --- 1. 週の境界計算ヘルパー (そのまま残す) ---
 def get_week_boundaries(today: datetime) -> tuple[datetime, datetime]:
     """
     指定された日付を含む「月曜日から日曜日まで」の一週間の境界を計算する。
     """
     # 0=月曜日, 6=日曜日
     days_to_monday = today.weekday() 
-    
-    # 週の始まり（月曜日 00:00:00）を計算
+    # ... (ロジックは省略) ...
     start_of_week = today - timedelta(days=days_to_monday)
     monday = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    # 週の終わり（日曜日 23:59:59）を計算
     sunday = monday + timedelta(days=6)
     end_of_week = sunday.replace(hour=23, minute=59, second=59, microsecond=999999)
-    
     return monday, end_of_week
+
+# --- 2. 汎用的な期間の合計取得ヘルパー (Services層で使用) ---
+def get_total_grams_for_week(db: Session, user_id: int, start_date: datetime, end_date: datetime) -> float:
+    """
+    指定された「月〜日」の一週間の合計廃棄重量を取得する。（ポイント計算用）
+    """
+    # データベースのレコード日付は文字列（ISO 8601）として保存されているため、文字列形式に変換
+    start_str = start_date.isoformat()
+    end_str = end_date.isoformat()
+    
+    total_grams = db.query(func.sum(FoodLossRecord.weight_grams)) \
+                       .filter(FoodLossRecord.user_id == user_id) \
+                       .filter(FoodLossRecord.record_date >= start_str) \
+                       .filter(FoodLossRecord.record_date <= end_str) \
+                       .scalar()
+                       
+    return total_grams or 0.0
+
+def get_last_two_weeks(today: datetime) -> Dict[str, tuple[datetime, datetime]]:
+    """
+    指定された日付を基準に、「今週」と「先週」の厳密な月曜日の開始と日曜日の終了時刻を計算する。
+    """
+    # 1. 今週の月曜日を正確に計算する (月曜日=0, 日曜日=6)
+    days_since_monday = today.weekday()
+    
+    # 今週の月曜日 00:00:00
+    this_monday = (today - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # 今週の日曜日 23:59:59
+    this_sunday = (this_monday + timedelta(days=6)).replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    # 2. 先週の境界を計算
+    last_monday = this_monday - timedelta(weeks=1)
+    last_sunday = this_sunday - timedelta(weeks=1)
+
+    return {
+        "this_week": (this_monday, this_sunday),
+        "last_week": (last_monday, last_sunday)
+    }
 
 def calculate_weekly_statistics(db: Session, user_id: int) -> Dict[str, Any]:
     """
