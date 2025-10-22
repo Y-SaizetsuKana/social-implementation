@@ -13,6 +13,7 @@ app = Flask(__name__,
 # アプリケーション起動時にデータベースを初期化
 init_db()
 
+#ルート定義
 @app.route("/")
 def index():
     return render_template('login.html')
@@ -26,7 +27,9 @@ def home():
 def input():
     today = datetime.date.today()
     return render_template('input.html',
-                           today=today)
+                           today=today,
+                           active_page='input'
+                           )
 
 @app.route("/log")
 def log():
@@ -76,19 +79,27 @@ def log():
                            week_dates=week_dates,
                            week_range=week_range_str,
                            prev_week=prev_week_date.strftime('%Y-%m-%d'),
-                           next_week=next_week_date.strftime('%Y-%m-%d'))
+                           next_week=next_week_date.strftime('%Y-%m-%d'),
+                           active_page='log'
+                           )
 
 @app.route("/points")
 def points():
-    return render_template('points.html')
+    return render_template('points.html',
+                           active_page='points'
+                           )
 
 @app.route("/knowledge")
 def knowledge():
-    return render_template('knowledge.html')
+    return render_template('knowledge.html',
+                           active_page='knowledge'
+                           )
 
 @app.route("/account")
 def account():
-    return render_template('account.html')
+    return render_template('account.html',
+                           active_page='account'
+                           )
 
 
 @app.route("/api/register_user", methods=["POST"])

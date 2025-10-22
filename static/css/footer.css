@@ -1,50 +1,50 @@
 /* フッター */
-html{
-    padding-bottom: 10em;
+body {
+    padding-bottom: 80px; /* ボトムナビゲーションの高さ分 */
+    padding-top: 20px;
 }
-footer {
-    width: 100%;
-    background-color: darkred;
-    color: whitesmoke;
-    position: fixed;
-    bottom: 0; /*下に固定*/
-}
+footer a:visited {
+    color: inherit;
 
-.footer-menu {
-    height: 60px;
 }
-
-.footer-menu-list {
-    list-style: none;
-    text-align: center;
-    line-height: 60px;
+.bottom-nav {
     display: flex;
-    justify-content: center;
-}
-
-.footer-menu-list li {
-    display: flex;
+    justify-content: space-around;
     align-items: center;
-    justify-content: center;
-    height: 60px;
-    width: 120px;
-    border-right: 1px solid whitesmoke;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    border-top: 1px solid #e0e0e0;
+    padding: 1em 0;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
 }
-.footer-menu-list li:last-child {
-    border-right: none;
-}
-
-footer p{
-    text-align: center;
-}
-
-footer a{
-    color: whitesmoke;
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-decoration: none;
+    color: #888; /* ★非アクティブ時のデフォルト色 (グレー) */
+}
+.nav-item i {
+    font-size: 1.5em; /* アイコンのサイズ */
+    margin-bottom: 4px;
+}
+.nav-item span {
+    font-size: 0.8em; /* 文字のサイズ */
+    padding: 0.8em 1em; /* ★文字の背景に余白を持たせる */
+    border-radius: 12px; /* ★角を丸める */
+    background-color: transparent; /* ★普段は透明 */
 }
 
-footer a.hover {
-    text-decoration: underline;
+/* ★アクティブ時のスタイル★ */
+.nav-item.active {
+    color: #333; /* ★アクティブ時のアイコンの色 (黒) */
+}
+.nav-item.active span {
+    background-color: #333; /* ★アクティブ時の文字の背景色 (黒) */
+    color: #fff; /* ★アクティブ時の文字の色 (白) */
 }
 
 /* ここまでフッター */ 
