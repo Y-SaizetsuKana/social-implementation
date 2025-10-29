@@ -9,7 +9,6 @@ from datetime import datetime, timedelta # ★ timedeltaとdatetimeは既に使�
 from typing import Dict, Any, Tuple
 
 
-
 # ★ get_last_two_weeks 関数を services.py の中で直接定義 ★
 def get_last_two_weeks(today: datetime) -> Dict[str, Tuple[datetime, datetime]]:
     """
