@@ -6,7 +6,7 @@ from models import User, FoodLossRecord, LossReason
 from schemas import LossRecordInput # schemas.pyで定義したPydanticスキーマをインポート
 import hashlib # ★ 追加 (パスワードハッシュ化のため)
 from datetime import datetime, timedelta # ★ timedeltaとdatetimeは既に使われているため、インポートを明確にする
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List, Optional
 
 
 # ★ get_last_two_weeks 関数を services.py の中で直接定義 ★
@@ -208,3 +208,37 @@ def calculate_weekly_points_logic(db: Session, user_id: int) -> Dict[str, Any]:
         "rate_last_week": round(rate_last_week * 100, 2),
         "rate_baseline": round(rate_baseline * 100, 2)
     }
+
+# services.py (追記)
+
+# ... (既存のサービス関数の後に追加) ...
+
+def get_all_loss_reasons(db: Session) -> List[str]:
+    """
+    データベースに登録されている全ての廃棄理由のテキストをリストで取得する。
+    """
+    # LossReasonモデルから reason_text の値のみをすべて取得
+    reasons = db.query(LossReason.reason_text).order_by(LossReason.id).all()
+    
+    # [('理由1',), ('理由2',)...] -> ['理由1', '理由2', ...] の形式に変換
+    return [r[0] for r in reasons]
+
+
+# services.py (追記)
+
+# ... (既存のサービス関数の後に追加) ...
+
+def get_user_profile(db: Session, user_id: int) -> Dict[str, Any] | None:
+    """
+    ユーザーIDから表示に必要な情報（ユーザー名、ポイント）を取得する。
+    """
+    user = db.query(User).filter_by(id=user_id).first()
+    
+    if user:
+        return {
+            "user_id": user.id,
+            "username": user.username,
+            "total_points": user.total_points,
+            # ここに必要に応じて address, family_size などの情報を追加
+        }
+    return None

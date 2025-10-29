@@ -5,13 +5,9 @@ from flask import session
 from models import User, LossReason, FoodLossRecord
 from pydantic import ValidationError # ★ ValidationErrorをインポート
 from schemas import LossRecordInput # ★ LossRecordInputをインポート
-from services import ( 
-    register_new_user, 
-    add_new_loss_record, 
-    get_user_by_username, # ログイン認証用
-    calculate_weekly_points_logic, # ポイント計算ロジック
-    # ★ get_user_by_id など、services.pyで定義した関数は必要に応じてインポート
-)
+from user_service import get_user_by_username, register_new_user, get_user_profile
+from services import add_new_loss_record, calculate_weekly_points_logic
+from services import get_user_profile
 import datetime
 
 # --- アプリケーション初期設定 ---
@@ -19,15 +15,10 @@ app = Flask(__name__,
             template_folder='../templates',
             static_folder='../static')
 
-# ★ 必須: セッションを使うためのSECRET_KEYを設定する ★
-# 本番環境では環境変数から読み込む必要があります
 app.secret_key = 'a_secure_and_complex_secret_key' 
 
-# アプリケーション起動時にデータベースを初期化
 init_db()
 
-# --- 画面ルーティング ---
-# ★ ログイン必須のチェック（セッション確認）を追加 ★
 def login_required(func):
     """ログインしているかチェックするデコレータ"""
     def wrapper(*args, **kwargs):
@@ -60,8 +51,6 @@ def log_page():
 @login_required
 def points_page():
     return render_template('points.html')
-
-# --- 認証機能 ---
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -165,6 +154,40 @@ def calculate_weekly_points_api():
     except Exception as e:
         db.rollback()
         return jsonify({"message": f"ポイント計算中にエラーが発生しました: {str(e)}"}), 500
+    finally:
+        db.close()
+
+@app.route("/api/loss_reasons", methods=["GET"])
+def get_loss_reasons_api():
+    """フロントエンドのドロップダウンリスト用の廃棄理由を返すAPI"""
+    db = next(get_db())
+    try:
+        # Services層の関数を呼び出す
+        reasons_list = get_all_loss_reasons(db)
+        
+        return jsonify({"reasons": reasons_list}), 200
+    except Exception as e:
+        return jsonify({"message": f"理由の取得中にエラーが発生しました: {str(e)}"}), 500
+    finally:
+        db.close()
+
+@app.route("/api/user/me", methods=["GET"])
+def get_user_profile_api():
+    """ログイン中のユーザーのプロフィール情報を返すAPI"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"message": "認証が必要です。"}), 401
+    
+    db = next(get_db())
+    try:
+        profile_data = get_user_profile(db, user_id)
+        
+        if not profile_data:
+            return jsonify({"message": "ユーザーが見つかりません。"}), 404
+        
+        return jsonify(profile_data), 200
+    except Exception as e:
+        return jsonify({"message": f"プロフィールの取得中にエラーが発生しました: {str(e)}"}), 500
     finally:
         db.close()
 
