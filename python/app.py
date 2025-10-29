@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, s
 from database import init_db, get_db
 from flask import session
 from models import User, LossReason, FoodLossRecord
-from statistics import get_total_grams_for_weeks, get_last_two_weeks 
 from pydantic import ValidationError # ★ ValidationErrorをインポート
 from schemas import LossRecordInput # ★ LossRecordInputをインポート
 from services import ( 
