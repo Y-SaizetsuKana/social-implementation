@@ -29,40 +29,98 @@ init_db()
 
 # --- 画面ルーティング ---
 # ★ ログイン必須のチェック（セッション確認）を追加 ★
+
+#未実装
 def login_required(func):
     """ログインしているかチェックするデコレータ"""
     def wrapper(*args, **kwargs):
         if 'user_id' not in session:
-            return redirect(url_for('index'))
+            return redirect(url_for('login'))
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__ # Flaskにルーティングを認識させる
     return wrapper
 
 @app.route("/")
 def index():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
     return render_template('login.html')
 
-@app.route("/home")
-@login_required
-def home():
-    return render_template('home.html')
-
 @app.route("/input")
-@login_required
-def input_page():
-    return render_template('input.html', today=datetime.date.today())
+def input():
+    today = datetime.date.today()
+    return render_template('input.html',
+                           today=today,
+                           active_page='input'
+                           )
 
 @app.route("/log")
-@login_required
-def log_page():
-    return render_template('log.html',)
+def log():
+    # --- 基準日の取得 ---
+    # URLのクエリパラメータから日付を取得しようと試みる
+    date_str = request.args.get('date')
+    
+    target_date = None
+    if date_str:
+        try:
+            # 文字列をdateオブジェクトに変換
+            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            # フォーマットが不正な場合は今日の日付を使用
+            target_date = datetime.date.today()
+    else:
+        # パラメータがなければ今日の日付を使用
+        target_date = datetime.date.today()
 
-@app.route("/points")
-@login_required
-def points_page():
-    return render_template('points.html')
+    # --- 週の計算 ---
+    # 基準日をもとに、その週の日曜日を計算
+    start_of_week = target_date - datetime.timedelta(days=(target_date.weekday() + 1) % 7)
+    end_of_week = start_of_week + datetime.timedelta(days=6)
+
+    # --- 1週間分の日付リストを作成 ---
+    week_dates = []
+    jp_weekdays = ["日", "月", "火", "水", "木", "金", "土"]
+    for i in range(7):
+        current_day = start_of_week + datetime.timedelta(days=i)
+        week_dates.append({
+            "date": current_day,
+            "day_num": current_day.day,
+            "weekday_jp": jp_weekdays[(current_day.weekday() + 1) % 7]
+        })
+
+    # --- 前週と次週の日付を計算 ---
+    # 表示している週の日曜から7日前と7日後を計算
+    prev_week_date = start_of_week - datetime.timedelta(days=7)
+    next_week_date = start_of_week + datetime.timedelta(days=7)
+
+    # --- 表示用の日付範囲を作成 ---
+    week_range_str = f"{start_of_week.month}月{start_of_week.day}日 〜 {end_of_week.month}月{end_of_week.day}日"
+
+    # HTMLテンプレートにデータを渡してレンダリング
+    return render_template('log.html',
+                           today=datetime.date.today(), # 「今日」をハイライトするために別途渡す
+                           week_dates=week_dates,
+                           week_range=week_range_str,
+                           prev_week=prev_week_date.strftime('%Y-%m-%d'),
+                           next_week=next_week_date.strftime('%Y-%m-%d'),
+                           active_page='log'
+                           )
+
+@app.route("/points", methods=['GET', 'POST'])
+def points():
+    return render_template('points.html',
+                           active_page='points'
+                           )
+
+@app.route("/knowledge")
+def knowledge():
+    return render_template('knowledge.html',
+                           active_page='knowledge'
+                           )
+
+@app.route("/account")
+def account():
+    return render_template('account.html',
+                           active_page='account'
+                           )
 
 # --- 認証機能 ---
 
@@ -77,12 +135,12 @@ def login():
         if user:
             # ★【テスト環境用】認証スキップとセッション保存 ★
             session['user_id'] = user.id
-            return redirect(url_for('home'))
+            return redirect(url_for('input'))
         else:
-            return render_template('login.html', error="ユーザーが見つかりません。")
+            return render_template('input.html', error="ユーザーが見つかりません。")
 
     except Exception as e:
-        return render_template('login.html', error=f"エラーが発生しました: {str(e)}")
+        return render_template('input.html', error=f"エラーが発生しました: {str(e)}")
     finally:
         db.close()
 
