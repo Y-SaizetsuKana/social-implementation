@@ -1,4 +1,4 @@
-# app.py (完成版)
+# app.py 
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from database import init_db, get_db
 from flask import session
@@ -34,17 +34,41 @@ init_db()
 def login_required(func):
     """ログインしているかチェックするデコレータ"""
     def wrapper(*args, **kwargs):
+        
+        # --- ★デバッグ用に追加 (ここから)★ ---
+        print(f"--- デコレータ実行 ({func.__name__}) ---")
+        print(f"現在のセッション: {session}")
+        # --- ★デバッグ用に追加 (ここまで)★ ---
+
         if 'user_id' not in session:
+            print("セッションに user_id が見つからないため /login へリダイレクトします") # ★デバッグ用
             return redirect(url_for('login'))
+        
+        print("セッションOK。ページを表示します。") # ★デバッグ用
         return func(*args, **kwargs)
-    wrapper.__name__ = func.__name__ # Flaskにルーティングを認識させる
+    
+    wrapper.__name__ = func.__name__ 
     return wrapper
 
 @app.route("/")
 def index():
+    # ★ 修正点 ★
+    # もしセッションに 'user_id' が存在する場合 (＝ログイン済みの場合)
+    if 'user_id' in session:
+        # ログインページではなく、入力ページにリダイレクトする
+        return redirect(url_for('input'))
+    
+    # ログインしていない場合のみ、login.html を表示する
     return render_template('login.html')
 
+@app.route('/register')
+def register():
+    return render_template('create_account.html')
+
+
+
 @app.route("/input")
+@login_required
 def input():
     today = datetime.date.today()
     return render_template('input.html',
@@ -52,7 +76,9 @@ def input():
                            active_page='input'
                            )
 
+
 @app.route("/log")
+@login_required
 def log():
     # --- 基準日の取得 ---
     # URLのクエリパラメータから日付を取得しようと試みる
@@ -104,13 +130,15 @@ def log():
                            active_page='log'
                            )
 
-@app.route("/points", methods=['GET', 'POST'])
+@app.route("/points")
+@login_required
 def points():
     return render_template('points.html',
                            active_page='points'
                            )
 
 @app.route("/knowledge")
+@login_required
 def knowledge():
     return render_template('knowledge.html',
                            active_page='knowledge'
@@ -124,25 +152,52 @@ def account():
 
 # --- 認証機能 ---
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    db = next(get_db())
-    username = request.form.get('username')
-    
-    try:
-        user = get_user_by_username(db, username) # Services層でユーザーを取得
+    # POSTリクエスト（フォームが送信された）の場合
+    if request.method == 'POST':
+        db = next(get_db())
+        username = request.form.get('username')
         
-        if user:
-            # ★【テスト環境用】認証スキップとセッション保存 ★
-            session['user_id'] = user.id
-            return redirect(url_for('input'))
-        else:
-            return render_template('input.html', error="ユーザーが見つかりません。")
+        # ★ デバッグ用: POSTされたユーザー名を表示してみる ★
+        print(f"--- POSTリクエスト受信: ユーザー名 '{username}' ---")
 
-    except Exception as e:
-        return render_template('input.html', error=f"エラーが発生しました: {str(e)}")
-    finally:
-        db.close()
+        try:
+            user = get_user_by_username(db, username) 
+            
+            if user: # ログイン成功
+                session['user_id'] = user.id
+                
+                print(f"--- ログイン成功 (user.id: {user.id}) ---")
+                print(f"現在のセッション: {session}")
+                
+                return redirect(url_for('input'))
+            else: # ログイン失敗
+                print(f"--- ログイン失敗: ユーザー '{username}' が見つかりません ---")
+                return render_template('login.html', error="ユーザーが見つかりません。")
+
+        except Exception as e:
+            print(f"--- エラー発生: {str(e)} ---")
+            return render_template('login.html', error=f"エラーが発生しました: {str(e)}")
+        finally:
+            db.close()
+    
+    # GETリクエスト（ページにアクセスした）の場合
+    # @login_required からのリダイレクトもここに来る
+    print(f"--- GETリクエスト /login ページ表示 ---")
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required  # ログインしている人だけがサインアウトできるようにする
+def logout():
+    """サインアウト処理"""
+    
+    # 1. セッションから 'user_id' を削除する
+    # .pop(キー, デフォルト値) で、キーが存在しなくてもエラーを防ぐ
+    session.pop('user_id', None)
+    
+    # 2. ログインページにリダイレクトする
+    return redirect(url_for('login'))
 
 # --- API: ユーザー登録 ---
 @app.route("/api/register_user", methods=["POST"])

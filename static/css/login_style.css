@@ -90,3 +90,25 @@ button:active {
   top: 3px;
   box-shadow: none;
 }
+.head-border {
+    color: #f4f4f4;
+    margin: 2rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.head-border:before,
+.head-border:after {
+    content: "";
+    height: 1px;
+    flex-grow: 1;
+    background-color: #666;
+}
+
+.head-border:before {
+    margin-right: 1rem;
+}
+
+.head-border:after {
+    margin-left: 1rem;
+}
