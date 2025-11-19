@@ -1,0 +1,22 @@
+<footer class="bottom-nav">
+    <a href="{{ url_for('input') }}" class="nav-item {% if active_page == 'input' %}active{% endif %}">
+        <i class="fas fa-calendar-week"></i>
+        <span>入力</span>
+    </a>
+    <a href="{{ url_for('log') }}" class="nav-item {% if active_page == 'log' %}active{% endif %}">
+        <i class="fas fa-calendar-week"></i>
+        <span>記録</span>
+    </a>
+    <a href="{{ url_for('knowledge') }}" class="nav-item {% if active_page == 'knowledge' %}active{% endif %}">
+        <i class="fas fa-calendar-week"></i>
+        <span>豆知識</span>
+    </a>
+    <a href="{{ url_for('points') }}" class="nav-item {% if active_page == 'points' %}active{% endif %}">
+        <i class="fas fa-calendar-week"></i>
+        <span>ポイント</span>
+    </a>
+    <a href="{{ url_for('account') }}" class="nav-item {% if active_page == 'account' %}active{% endif %}">
+        <i class="fas fa-calendar-week"></i>
+        <span>アカウント</span>
+    </a>
+</footer>
