@@ -8,93 +8,101 @@
   box-sizing: border-box;
 }
 body {
-  font: 15px/1.25 "Alef";
-  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f4f4f8; /* 他の画面の背景色に統一 */
+  color: #333;
+  margin: 0;
+  padding-top: 50px;
+  padding-bottom: 50px;
+  text-align: center;
 }
 form {
-  margin: 70px auto;
-  background: #2a3644;
-  width: 347px;
+  margin: 0 auto;
+  background: white; /* カードUIとして白背景に */
+  width: 90%;
+  max-width: 380px; /* モバイルサイズに制限 */
   text-align: center;
-  padding: 40px;
-  -webkit-border-radius: 6px;
-  -moz-border-radius: 6px;
-  -ms-border-radius: 6px;
-  -o-border-radius: 6px;
-  border-radius: 6px;
+  padding: 30px;
+  border-radius: 12px; /* 角丸に */
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05); /* 影を追加 */
 }
 form > h1 {
-  color: #f4f4f4;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.7);
-  font-weight: 400;
-  margin-bottom: 20px;
+  color: #333; /* 文字色をダークカラーに */
+  font-weight: bold;
+  margin-bottom: 25px;
+  font-size: 1.5em;
 }
 input {
-  background: rgba(0, 0, 0, 0.2);
-  color: #fff;
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+  background: #fff;
+  color: #333;
   display: block;
-  width: 269px;
-  padding: 15px;
-  margin-bottom: 10px;
-  -webkit-border-radius: 6px;
-  -moz-border-radius: 6px;
-  -ms-border-radius: 6px;
-  -o-border-radius: 6px;
-  border-radius: 6px;
-  -webkit-transition: all 0.1s ease-in-out;
-  -moz-transition: all 0.1s ease-in-out;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd; /* 枠線を追加 */
+  border-radius: 8px;
   transition: all 0.1s ease-in-out;
   outline: none;
+  box-sizing: border-box;
 }
 input:focus {
-  background: rgba(0, 0, 0, 0.1);
-  -webkit-transition: all 0.1s ease-in-out;
-  -moz-transition: all 0.1s ease-in-out;
-  transition: all 0.1s ease-in-out;
+  border-color: #007bff; /* フォーカス色 */
 }
 ::-webkit-input-placeholder {
-  color: rgba(225, 225, 225, 0.4);
+  color: #aaa;
 }
 :-moz-placeholder {
-  color: rgba(225, 225, 225, 0.4);
+  color: #aaa;
 }
 ::-moz-placeholder {
-  color: rgba(225, 225, 225, 0.4);
+  color: #aaa;
 }
 :-ms-input-placeholder {
-  color: rgba(225, 225, 225, 0.4);
+  color: #aaa;
 }
 button {
-  position: relative;
   display: block;
-  margin-top: 15px;
-  margin-bottom: 15px;
-  padding: 17px;
-  width: 270px;
-  -webkit-border-radius: 6px;
-  -moz-border-radius: 6px;
-  -ms-border-radius: 6px;
-  -o-border-radius: 6px;
-  border-radius: 6px;
-  -webkit-transition: all 0.1s ease-in-out;
-  -moz-transition: all 0.1s ease-in-out;
+  margin: 20px 0 10px 0;
+  padding: 15px;
+  width: 100%;
+  border-radius: 10px;
   transition: all 0.1s ease-in-out;
-  font-size: 1.2em;
-  background: #f26964;
-  color: #f4f4f4;
-  box-shadow: 0px 3px 0px #ab4b47;
+  font-size: 1.1em;
+  font-weight: bold;
   cursor: pointer;
+  box-sizing: border-box;
 }
-button:active {
-  top: 3px;
-  box-shadow: none;
-}
-.head-border {
+
+/* ログインボタン */
+#login-button {
+    background: #28a745; /* 緑色 (アクティブカラー) */
     color: #f4f4f4;
-    margin: 2rem 0;
+    box-shadow: 0px 3px 0px #218838;
+}
+#login-button:active {
+    position: relative;
+    top: 3px;
+    box-shadow: none;
+}
+
+/* アカウント作成/その他ボタン */
+#create-account-button {
+    background: #555; /* セカンダリカラー */
+    color: #f4f4f4;
+    box-shadow: 0px 3px 0px #444;
+}
+#create-account-button:active {
+    position: relative;
+    top: 3px;
+    box-shadow: none;
+}
+
+.head-border {
+    color: #333;
+    margin: 30px 0 20px;
     display: flex;
     align-items: center;
+    font-size: 0.9em;
 }
 
 .head-border:before,
@@ -102,7 +110,7 @@ button:active {
     content: "";
     height: 1px;
     flex-grow: 1;
-    background-color: #666;
+    background-color: #ddd;
 }
 
 .head-border:before {
@@ -111,4 +119,10 @@ button:active {
 
 .head-border:after {
     margin-left: 1rem;
+}
+
+.error-message {
+    color: #f26964;
+    margin-bottom: 15px;
+    font-weight: bold;
 }

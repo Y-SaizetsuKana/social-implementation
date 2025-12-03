@@ -12,6 +12,10 @@
         <form id="register" method="post" action="/register">
             <h1>テストWebアプリ</h1>
 
+            {% if error %}
+            <p class="error-message">{{ error }}</p>
+            {% endif %}
+
             <input type="email" id="email" name="email" placeholder="Email" />
 
             <input type="text" id="username" name="username" placeholder="Username" />
@@ -24,11 +28,11 @@
 
             <input type="text" id="address" name="address" placeholder="住所" />
             
-            <button type="submit" id="login-button">アカウント作成</button>
+            <button type="submit" id="create-account-button">アカウント作成</button>
 
             <p class="head-border">アカウントをすでにお持ちの場合</p>
 
-            <button type="button" id="create-account-button" onclick="window.location.href='{{ url_for('login') }}'">
+            <button type="button" onclick="window.location.href='{{ url_for('login') }}'">
             ログイン
             </button>
         </form>

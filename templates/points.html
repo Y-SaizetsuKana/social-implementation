@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/points.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <title>テストWebアプリ</title>
   </head>
   <body>
@@ -12,24 +13,43 @@
       <h1>ポイント</h1>
     </header>
 
-    <main>
-      <div class="textBox" data-title="所持ポイント">100P</div>
-      <div class="textBox" data-title="交換所">
-        <ul>
-          <li>
-            エコバッグ - 500P<button type="button" class="trade-button" id="trade">交換</button>
-          </li>
+    <div class="container">
+      <main>
+        <div class="card points-status-card">
+          <p class="card-label">所持ポイント</p>
+          <p class="current-points">100<span class="unit">P</span></p>
+        </div>
 
-          <li>
-            リサイクルボックス - 1000P<button type="button" class="trade-button" id="trade">交換</button>
-          </li>
+        <div class="card exchange-list-card">
+          <h2 class="card-title">交換所</h2>
+          <ul class="exchange-list">
+            <li class="exchange-item">
+              <div class="item-details">
+                <span class="item-name">エコバッグ</span>
+                <span class="item-cost">500P</span>
+              </div>
+              <button type="button" class="trade-button" data-item="エコバッグ" data-cost="500">交換</button>
+            </li>
 
-          <li>
-            寄付 - 2000P<button type="button" class="trade-button">交換</button>
-          </li>
-        </ul>
-      </div>
-    </main>
+            <li class="exchange-item">
+              <div class="item-details">
+                <span class="item-name">リサイクルボックス</span>
+                <span class="item-cost">1000P</span>
+              </div>
+              <button type="button" class="trade-button" data-item="リサイクルボックス" data-cost="1000">交換</button>
+            </li>
+
+            <li class="exchange-item">
+              <div class="item-details">
+                <span class="item-name">寄付</span>
+                <span class="item-cost">2000P</span>
+              </div>
+              <button type="button" class="trade-button" data-item="寄付" data-cost="2000">交換</button>
+            </li>
+          </ul>
+        </div>
+      </main>
+    </div>
 
     <div id="confirmation-modal" class="modal">
       <div class="modal-content">
@@ -41,6 +61,10 @@
         <button id="confirm-yes">はい</button>
         <button id="confirm-no">キャンセル</button>
       </div>
+    </div>
+
+    <div id="toast-notification" class="toast-hidden">
+      <p id="toast-message"></p>
     </div>
 
     {% include 'footer.html' %}

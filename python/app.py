@@ -55,7 +55,6 @@ def login_required(func):
 
 @app.route("/")
 def index():
-    # ★ 修正点 ★
     # もしセッションに 'user_id' が存在する場合 (＝ログイン済みの場合)
     if 'user_id' in session:
         # ログインページではなく、入力ページにリダイレクトする

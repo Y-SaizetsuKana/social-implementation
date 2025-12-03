@@ -3,64 +3,188 @@ body {
     background-color: #f4f4f8;
     color: #333;
     margin: 0;
+    padding-top: 20px; /* 上部に余白 */
     padding-bottom: 80px; /* ボトムナビゲーションの高さ分 */
 }
 header{
     text-align: center;
-    margin-top: 20px;
+    margin-bottom: 20px;
 }
-.textBox {
-border: 2px solid #333;
-border-radius: 5px;
-padding: 15px;
-position: relative;
-margin: 5em 2em;
+.container {
+    padding: 0 15px; /* 左右に余白 */
+    max-width: 500px;
+    margin: 0 auto;
 }
 
-.textBox::before {
-background-color: #f4f4f8;
-color: #333;
-content: attr(data-title); 
-font-weight: bold;
-left: 30px;
-padding: 3px 10px;
-position: absolute;
-top: -15px;
+/* --------------------------------------- */
+/* 1. 統一されたカードスタイル */
+/* --------------------------------------- */
+.card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    text-align: left;
 }
-ul {
+
+/* --------------------------------------- */
+/* 2. 所持ポイントのステータスカード */
+/* --------------------------------------- */
+.points-status-card {
+    background-color: #28a745; /* 緑色 (MyDyson風のステータス表示) */
+    color: white;
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.card-label {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+}
+
+.current-points {
+    margin: 0;
+    font-size: 3em; /* ポイント数を大きく表示 */
+    font-weight: bold;
+}
+.current-points .unit {
+    font-size: 0.6em;
+    font-weight: 500;
+    margin-left: 5px;
+}
+
+/* --------------------------------------- */
+/* 3. 交換所リスト */
+/* --------------------------------------- */
+.exchange-list-card .card-title {
+    margin: 0 0 15px 0;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.exchange-list {
     list-style-type: none;
     padding: 0;
+    margin: 0;
 }
+
+.exchange-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.exchange-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.item-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-name {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 3px;
+}
+
+.item-cost {
+    font-size: 0.9em;
+    color: #555;
+}
+
+/* 交換ボタン */
+.trade-button {
+    background-color: #007bff; /* 青色 (セカンダリ強調色) */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 15px;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.trade-button:hover {
+    background-color: #0056b3;
+}
+
+
+/* --------------------------------------- */
+/* 4. モーダル (デザイン微調整) */
+/* --------------------------------------- */
 .modal {
     display: none; /* 初期状態では非表示 */
     position: fixed; /* 画面に固定 */
-    z-index: 1000; /* 他の要素より手前に表示 */
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.4); /* 背景を半透明の黒にする */
+    background-color: rgba(0,0,0,0.6); /* 背景を少し濃い半透明の黒にする */
 }
 
 /* モーダルの中身（確認画面） */
 .modal-content {
     background-color: #fefefe;
-    margin: 15% auto; /* 画面中央付近に配置 */
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%; /* 幅を調整 */
+    margin: 20% auto; /* 画面中央付近に配置を調整 */
+    padding: 30px;
+    border: none; /* 枠線を削除 */
+    width: 90%; 
     max-width: 400px;
-    border-radius: 8px;
+    border-radius: 12px;
     text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* 影を強調 */
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.modal-content p {
+    font-size: 1.1em;
+    margin-bottom: 25px;
+}
+
+.modal-content button {
+    padding: 12px 20px;
+    margin: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1em;
+    width: 45%; /* ボタンを横並びにする */
+}
+
+#confirm-yes {
+    background-color: #28a745;
+    color: white;
+    border: 1px solid #28a745;
+}
+
+#confirm-no {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
 }
 
 /* 閉じるボタン */
 .close-button {
-    color: #aaa;
+    color: #555;
     float: right;
-    font-size: 28px;
-    font-weight: bold;
+    font-size: 24px;
+    font-weight: normal;
+    line-height: 1;
 }
 
 .close-button:hover,
@@ -68,4 +192,33 @@ ul {
     color: #000;
     text-decoration: none;
     cursor: pointer;
+}
+
+#toast-notification {
+    position: fixed;
+    bottom: 90px; /* フッター (bottom-nav) のすぐ上に配置 */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333; /* ダーク背景 */
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 1001; /* モーダルより手前 */
+    text-align: center;
+    min-width: 250px;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out, visibility 0.5s;
+    visibility: visible;
+}
+
+/* 非表示状態 */
+.toast-hidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+#toast-message {
+    margin: 0;
+    font-size: 0.9em;
+    font-weight: 500;
 }

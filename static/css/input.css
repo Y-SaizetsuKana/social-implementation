@@ -78,12 +78,13 @@ h2 {
 
 
 /* =======================================
-ラジオボタンのカスタムスタイル
+ラジオボタンのカスタムスタイル (MyDyson風セグメントコントロールへ)
    ======================================= */
 .radio-options {
+    /* 均等配置で、1行に収まらない場合は折り返す */
     display: flex;
-    flex-wrap: wrap; /* 画面幅で折り返す */
-    gap: 10px; /* 項目間の隙間 */
+    flex-wrap: wrap; 
+    gap: 8px; /* 項目間の隙間を調整 */
 }
 
 .radio-options input[type="radio"] {
@@ -95,21 +96,25 @@ h2 {
 
 .radio-options label {
     /* ★ラベルをボタンのように見せる */
+    flex-grow: 1; /* 可能な限り幅を広げる */
     display: inline-block;
-    padding: 10px 18px;
+    padding: 10px 15px;
     border: 1px solid #ddd;
-    border-radius: 20px; /* 角丸を強くする */
+    border-radius: 8px; /* 角丸を他のUIに合わせる */
     background-color: #f9f9f9;
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
+    text-align: center;
+    min-width: 100px; /* 最小幅を設定してタップしやすく */
 }
 
 /* ★選択されたラジオボタンの隣のラベルのスタイル */
 .radio-options input[type="radio"]:checked + label {
-    background-color: #252525; /* ログ画面のアクティブ色 (緑) */
+    background-color: #28a745; /* アクティブ色 (緑) */
     color: white;
-    border-color: #2a2a2a;
+    border-color: #28a745;
+    font-weight: bold;
 }
 
 /* =======================================

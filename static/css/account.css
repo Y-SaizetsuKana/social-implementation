@@ -8,6 +8,26 @@ body {
 html{
     text-align: center;
 }
+header{
+    text-align: center;
+    margin-top: 20px;
+}
+main {
+    padding: 0 15px; /* 左右に余白 */
+    max-width: 500px; /* PCでも広がりすぎないように */
+    margin: 0 auto; /* 中央寄せ */
+}
+
+/* ★追加: カードスタイル（他の画面と統一） */
+.card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    text-align: left; /* カード内のテキストは左寄せ */
+}
+
 main p{
     text-decoration: underline;
 }
@@ -19,19 +39,24 @@ main p{
     display: block;
     margin-bottom: 5px;
     color: #555;
+    font-size: 0.9em; /* 少し小さく */
 }
 .info-group span {
     font-size: 1.1em;
+    font-weight: 500;
 }
 .submit-btn {
     /* <a>タグをボタン風に見せるための調整 */
     font-size: 1.1em;
     color: white;
-    display: inline-block;
+    display: block; /* 100%幅で表示 */
+    width: 100%;
     text-align: center;
-    padding: 12px;
-    margin-top: 10px;
-    background-color: black;
+    padding: 15px;
+    margin-top: 30px; /* 上部に余白 */
+    background-color: #f26964; /* ログインボタンの色を流用 */
     text-decoration: none;
-    border-radius: 12px;
+    border-radius: 10px;
+    font-weight: bold;
+    box-sizing: border-box;
 }

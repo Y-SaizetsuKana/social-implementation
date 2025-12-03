@@ -20,58 +20,70 @@ body {
 }
 .header h3 {
     margin: 0;
-    font-size: 1em;
-    color: #555;
+    font-size: 1.1em; /* 週の範囲を少し大きく */
+    font-weight: bold;
+    color: #333;
 }
 .header .actions {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+    display: none; /* actions spanは使用しない */
 }
-.header .actions span {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 0.8em;
-}
+/* 週ナビゲーションボタンのデザインをシンプルに */
 .header a {
-    text-decoration: none; /* リンクの下線を消す */
-    background-color: #fff; /* 背景色を白に */
-    color: #252525; /* 文字色を青に（お好みで変更可）*/
-    border: 1px solid #ddd; /* 枠線を追加 */
-    padding: 8px 16px; /* ボタンの内側の余白 */
-    border-radius: 20px; /* 角を丸くする（数値で丸みを調整）*/
-    font-size: 0.9em; /* 文字の大きさを調整 */
-    font-weight: 500; /* 文字の太さ */
-    transition: background-color 0.2s; /* ホバー時のアニメーション */
+    text-decoration: none;
+    background-color: transparent; /* 背景を透明に */
+    color: #007bff; /* リンク色 */
+    border: none;
+    padding: 5px 10px; /* コンパクトに */
+    border-radius: 8px; 
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: background-color 0.2s;
 }
 
 /* マウスを乗せた時のスタイル */
 .header a:hover {
-    background-color: #f4f4f8; /* 背景色を少し暗くする */
+    background-color: #e0e0e0; /* ホバー時に薄いグレー */
 }
-/* 週間カレンダー */
+
+/* 週間カレンダー (日別セレクター) */
 .week-nav {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    background-color: white; /* カレンダー全体をカード風の背景に */
+    border-radius: 12px;
+    padding: 8px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 .day-selector {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: 8px;
-    border-radius: 8px;
-    width: 30px;
+    align-items: center; /* センタリング */
+    gap: 3px;
+    padding: 5px 2px;
+    border-radius: 8px; /* 角丸を適用 */
+    width: 38px; /* タップしやすさとコンパクトさを両立 */
+    height: 55px; /* 高さを固定 */
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.day-selector:hover:not(.active) {
+    background-color: #f0f0f0; /* ホバー効果 */
 }
 .day-selector .weekday {
-    font-size: 0.8em;
+    font-size: 0.75em; /* 曜日名 */
+    font-weight: bold;
     color: #777;
 }
+.day-selector .day-num {
+    font-size: 1.1em; /* 日付を大きく */
+    font-weight: bold;
+}
+/* アクティブな日のスタイル */
 .day-selector.active {
-    background-color: #28a745; /* 緑色 */
+    background-color: #28a745; /* 緑色 (統一) */
     color: white;
 }
 .day-selector.active .weekday {
@@ -129,4 +141,3 @@ body {
     color: #aaa;
     font-size: 0.9em;
 }
-
