@@ -1,5 +1,5 @@
 # app.py 
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, make_response, redirect, url_for, session
 from database import init_db, get_db
 from flask import session
 from models import User, LossReason, FoodLossRecord
@@ -11,14 +11,18 @@ from services import (
     add_new_loss_record, 
     get_user_by_username, # ログイン認証用
     calculate_weekly_points_logic, # ポイント計算ロジック
+    get_user_by_id
     # ★ get_user_by_id など、services.pyで定義した関数は必要に応じてインポート
 )
-import datetime
+from datetime import datetime, timedelta, timezone
+from knowledge import bp as knowledge_bp
 
 # --- アプリケーション初期設定 ---
 app = Flask(__name__,
             template_folder='../templates',
             static_folder='../static')
+
+app.register_blueprint(knowledge_bp)
 
 # ★ 必須: セッションを使うためのSECRET_KEYを設定する ★
 # 本番環境では環境変数から読み込む必要があります
@@ -61,16 +65,60 @@ def index():
     # ログインしていない場合のみ、login.html を表示する
     return render_template('login.html')
 
-@app.route('/register')
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    return render_template('create_account.html')
+    """
+    GET: アカウント作成ページを表示
+    POST: アカウント作成処理を実行
+    """
+    
+    # --- POSTリクエスト（フォームが送信された）の場合 ---
+    if request.method == 'POST':
+        # 1. フォームからデータを取得
+        email = request.form.get('email')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        password_confirm = request.form.get('password_confirm')
+
+        # 2. バリデーション（入力チェック）
+        if not all([email, username, password, password_confirm]):
+            return render_template('register.html', error="すべての項目を入力してください。")
+        
+        if password != password_confirm:
+            return render_template('register.html', error="パスワードが一致しません。")
+        
+        # 3. データベース処理
+        db = next(get_db())
+        try:
+            # 4. Services層を呼び出して登録
+            register_new_user(db, username, email, password)
+            
+            # 5. 成功したらログインページにリダイレクト
+            # (注: ここで自動的にログインさせることも可能ですが、
+            #  まずは登録後に手動でログインする流れにします)
+            return redirect(url_for('login'))
+
+        except ValueError as e:
+            # 6. サービス層からのエラー（重複など）をキャッチ
+            db.rollback()
+            return render_template('register.html', error=str(e))
+        except Exception as e:
+            # その他のDBエラーなど
+            print(f"致命的なエラーが発生しました: {e}") # ⬅︎ 追加
+            db.rollback()
+            return render_template('register.html', error=f"エラーが発生しました: {str(e)}")
+        finally:
+            db.close()
+
+    # --- GETリクエスト（ページにアクセスした）の場合 ---
+    return render_template('register.html')
 
 
 
 @app.route("/input")
 @login_required
 def input():
-    today = datetime.date.today()
+    today = datetime.today().date()
     return render_template('input.html',
                            today=today,
                            active_page='input'
@@ -88,24 +136,24 @@ def log():
     if date_str:
         try:
             # 文字列をdateオブジェクトに変換
-            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
             # フォーマットが不正な場合は今日の日付を使用
-            target_date = datetime.date.today()
+            target_date = datetime.today().date()
     else:
         # パラメータがなければ今日の日付を使用
-        target_date = datetime.date.today()
+        target_date = datetime.today().date()
 
     # --- 週の計算 ---
     # 基準日をもとに、その週の日曜日を計算
-    start_of_week = target_date - datetime.timedelta(days=(target_date.weekday() + 1) % 7)
-    end_of_week = start_of_week + datetime.timedelta(days=6)
+    start_of_week = target_date - timedelta(days=(target_date.weekday() + 1) % 7)
+    end_of_week = start_of_week + timedelta(days=6)
 
     # --- 1週間分の日付リストを作成 ---
     week_dates = []
     jp_weekdays = ["日", "月", "火", "水", "木", "金", "土"]
     for i in range(7):
-        current_day = start_of_week + datetime.timedelta(days=i)
+        current_day = start_of_week + timedelta(days=i)
         week_dates.append({
             "date": current_day,
             "day_num": current_day.day,
@@ -114,15 +162,15 @@ def log():
 
     # --- 前週と次週の日付を計算 ---
     # 表示している週の日曜から7日前と7日後を計算
-    prev_week_date = start_of_week - datetime.timedelta(days=7)
-    next_week_date = start_of_week + datetime.timedelta(days=7)
+    prev_week_date = start_of_week - timedelta(days=7)
+    next_week_date = start_of_week + timedelta(days=7)
 
     # --- 表示用の日付範囲を作成 ---
     week_range_str = f"{start_of_week.month}月{start_of_week.day}日 〜 {end_of_week.month}月{end_of_week.day}日"
 
     # HTMLテンプレートにデータを渡してレンダリング
     return render_template('log.html',
-                           today=datetime.date.today(), # 「今日」をハイライトするために別途渡す
+                           today=datetime.today().date(), # 「今日」をハイライトするために別途渡す
                            week_dates=week_dates,
                            week_range=week_range_str,
                            prev_week=prev_week_date.strftime('%Y-%m-%d'),
@@ -137,18 +185,36 @@ def points():
                            active_page='points'
                            )
 
-@app.route("/knowledge")
-@login_required
-def knowledge():
-    return render_template('knowledge.html',
-                           active_page='knowledge'
-                           )
-
 @app.route("/account")
+@login_required 
 def account():
-    return render_template('account.html',
-                           active_page='account'
-                           )
+    # 1. セッションからユーザーIDを取得
+    user_id = session['user_id']
+    
+    db = next(get_db())
+    try:
+        # 2. データベースからユーザー情報を取得
+        # (services.py の get_user_by_id 関数を使用)
+        current_user = get_user_by_id(db, user_id)
+        
+        if not current_user:
+            # 万が一、DBからユーザーが削除されていた場合
+            # 強制的にログアウトさせ、ログインページに戻す
+            session.pop('user_id', None)
+            return redirect(url_for('login'))
+
+        # 3. 取得したユーザー情報を 'user' という名前でHTMLに渡す
+        return render_template('account.html',
+                               active_page='account',
+                               user=current_user  # ★ ユーザーオブジェクトを渡す
+                               )
+    except Exception as e:
+        # DBエラーなどが発生した場合
+        return render_template('account.html',
+                               active_page='account',
+                               error="アカウント情報の取得に失敗しました。")
+    finally:
+        db.close()
 
 # --- 認証機能 ---
 
@@ -170,8 +236,34 @@ def login():
                 
                 print(f"--- ログイン成功 (user.id: {user.id}) ---")
                 print(f"現在のセッション: {session}")
+                has_visited = request.cookies.get('first_visit')
+
+                if has_visited:
+                    # Cookieがある場合: 2回目以降のアクセス
+                    # 通常のメインコンテンツページにリダイレクトする
+                    return redirect(url_for('input'))
+                else:
+                    # Cookieがない場合: 初回アクセス
+                    # 初回起動時のみ表示するページ（テンプレート）をレンダリングする
+                    response = make_response(render_template('welcome.html'))
+
+                    # 2. Cookieを設定
+                    # 'first_visit'というキーで値を保存し、有効期限を長めに設定する（例: 1年後）
+                    # max_ageは秒単位 (365日 * 24時間 * 60分 * 60秒)
+                    JST = timezone(timedelta(hours=+9))
+                    now = datetime.now(JST)
+                    tomorrow = now.date() + timedelta(days=1)
+                    expiry_time = datetime(tomorrow.year, tomorrow.month, tomorrow.day, tzinfo=JST)
+                    response.set_cookie(
+                        'first_visit', 
+                        'true', 
+                        expires=expiry_time, # 翌日の0時を設定
+                        httponly=True
+                    )
+                    
+                    # 3. Cookieを設定したレスポンスを返す
+                    return response
                 
-                return redirect(url_for('input'))
             else: # ログイン失敗
                 print(f"--- ログイン失敗: ユーザー '{username}' が見つかりません ---")
                 return render_template('login.html', error="ユーザーが見つかりません。")
@@ -196,8 +288,22 @@ def logout():
     # .pop(キー, デフォルト値) で、キーが存在しなくてもエラーを防ぐ
     session.pop('user_id', None)
     
-    # 2. ログインページにリダイレクトする
-    return redirect(url_for('login'))
+    response = make_response(redirect(url_for('login')))
+    response.delete_cookie('first_visit')
+    return response
+
+@app.route('/reset_visit')
+def reset_visit():
+    # Cookieを削除するためのレスポンスを作成
+    response = make_response(redirect(url_for('login')))
+    
+    # 既存のCookieと同じ名前で、max_ageを負の値（またはゼロ）に設定することで削除を指示
+    # または expires を過去の時刻に設定
+    response.set_cookie('first_visit', '', max_age=0) 
+    
+    return response
+# --- ここまで画面ルーティング ---
+
 
 # --- API: ユーザー登録 ---
 @app.route("/api/register_user", methods=["POST"])

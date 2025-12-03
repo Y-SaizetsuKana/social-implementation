@@ -18,10 +18,12 @@
                     <input type="text" id="dish1" name="dish1" placeholder="例: カレーライス" />
                 </div>
                 
+                <!--
                 <div class="form-group">
                     <label for="waste1">廃棄物</label>
                     <input type="text" id="waste1" name="waste1" placeholder="例: 人参の皮、食べ残し" />
                 </div>
+                -->
 
                 <div class="form-group">
                     <label for="amount1">廃棄量[g]</label>
@@ -43,8 +45,11 @@
                         <input type="radio" id="reason1-opt3" name="reason1" value="料理後の廃棄">
                         <label for="reason1-opt3">料理後の廃棄</label>
 
-                        <input type="radio" id="reason1-opt4" name="reason1" value="その他">
-                        <label for="reason1-opt4">その他</label>
+                        <input type="radio" id="reason1-opt4" name="reason1" value="食べ残し">
+                        <label for="reason1-opt4">食べ残し</label>
+
+                        <input type="radio" id="reason1-opt5" name="reason1" value="その他">
+                        <label for="reason1-opt5">その他</label>
                     </div>
                 </div>
             </div>
@@ -54,27 +59,6 @@
         </form>
     </div>
 
-    <footer class="bottom-nav">
-        <a href="{{ url_for('input') }}" class="nav-item {% if active_page == 'input' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>入力</span>
-        </a>
-        <a href="{{ url_for('log') }}" class="nav-item {% if active_page == 'log' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>記録</span>
-        </a>
-        <a href="{{ url_for('knowledge') }}" class="nav-item {% if active_page == 'knowledge' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>豆知識</span>
-        </a>
-        <a href="{{ url_for('points') }}" class="nav-item {% if active_page == 'points' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>ポイント</span>
-        </a>
-        <a href="{{ url_for('account') }}" class="nav-item {% if active_page == 'account' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>アカウント</span>
-        </a>
-    </footer>
+    {% include 'footer.html' %}
 </body>
 </html>

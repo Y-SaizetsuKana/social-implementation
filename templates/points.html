@@ -1,49 +1,51 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/points.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}" />
     <title>テストWebアプリ</title>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>ポイント</h1>
+      <h1>ポイント</h1>
     </header>
 
     <main>
-        <div class="textBox" data-title="所持ポイント">100P</div>
-        <div class="textBox" data-title="交換所">
-            <ul>
-                <li>エコバッグ - 500P</li>
-                <li>リサイクルボックス - 1000P</li>
-                <li>寄付 - 2000P</li>
-            </ul>
-        </div>
+      <div class="textBox" data-title="所持ポイント">100P</div>
+      <div class="textBox" data-title="交換所">
+        <ul>
+          <li>
+            エコバッグ - 500P<button type="button" class="trade-button" id="trade">交換</button>
+          </li>
+
+          <li>
+            リサイクルボックス - 1000P<button type="button" class="trade-button" id="trade">交換</button>
+          </li>
+
+          <li>
+            寄付 - 2000P<button type="button" class="trade-button">交換</button>
+          </li>
+        </ul>
+      </div>
     </main>
 
-    <footer class="bottom-nav">
-        <a href="{{ url_for('input') }}" class="nav-item {% if active_page == 'input' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>入力</span>
-        </a>
-        <a href="{{ url_for('log') }}" class="nav-item {% if active_page == 'log' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>記録</span>
-        </a>
-        <a href="{{ url_for('knowledge') }}" class="nav-item {% if active_page == 'knowledge' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>豆知識</span>
-        </a>
-        <a href="{{ url_for('points') }}" class="nav-item {% if active_page == 'points' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>ポイント</span>
-        </a>
-        <a href="{{ url_for('account') }}" class="nav-item {% if active_page == 'account' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>アカウント</span>
-        </a>
-    </footer>
-</body>
+    <div id="confirmation-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>交換確認</h2>
+        <p>
+          <span id="item-name"></span> を <span id="item-cost"></span>P で交換しますか？
+        </p>
+        <button id="confirm-yes">はい</button>
+        <button id="confirm-no">キャンセル</button>
+      </div>
+    </div>
+
+    {% include 'footer.html' %}
+
+    <script src="{{ url_for('static', filename='js/points.js') }}"></script>
+
+  </body>
 </html>
