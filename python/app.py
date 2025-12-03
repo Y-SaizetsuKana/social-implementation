@@ -34,7 +34,6 @@ init_db()
 # --- 画面ルーティング ---
 # ★ ログイン必須のチェック（セッション確認）を追加 ★
 
-#未実装
 def login_required(func):
     """ログインしているかチェックするデコレータ"""
     def wrapper(*args, **kwargs):
@@ -292,16 +291,6 @@ def logout():
     response.delete_cookie('first_visit')
     return response
 
-@app.route('/reset_visit')
-def reset_visit():
-    # Cookieを削除するためのレスポンスを作成
-    response = make_response(redirect(url_for('login')))
-    
-    # 既存のCookieと同じ名前で、max_ageを負の値（またはゼロ）に設定することで削除を指示
-    # または expires を過去の時刻に設定
-    response.set_cookie('first_visit', '', max_age=0) 
-    
-    return response
 # --- ここまで画面ルーティング ---
 
 
