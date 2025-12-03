@@ -23,11 +23,17 @@
         </div>
 
         <h1>豆知識</h1>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="料理">料理</button>
+            <button class="filter-btn" data-filter="掃除">掃除</button>
+            <button class="filter-btn" data-filter="その他">その他</button>
+            <button class="filter-btn" data-filter="全て">全て表示</button>
+        </div>
         <div class="textBox" >
-            <div class="knowledge-list-container">
+            <div class="knowledge-list-container" id="knowledge-list-container-trivia">
                 
                 {% for item in knowledge_list %}
-                <div class="knowledge-item" data-target="detail-{{ item.id }}">
+                <div class="knowledge-item" data-target="detail-{{ item.id }}" data-category="{{ item.filter_group }}">
                     <span class="title">{{ item.category }}</span> 
                 </div>
                 {% endfor %}
@@ -41,7 +47,8 @@
         <span class="close-btn">&times;</span>
         <h2>廃棄部分：{{ item.category }}</h2>
         <h3>再利用方法：{{ item.title }}</h3> 
-        <p>説明：{{ item.content }}</p> </div>
+        <p>説明：{{ item.content }}</p> 
+    </div>
     </div>
     {% endfor %}
 

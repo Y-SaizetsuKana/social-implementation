@@ -148,3 +148,40 @@ main {
 .modal-open {
     overflow: hidden;
 }
+
+.filter-buttons {
+    margin: 10px 2em 15px 2em; /* mainの左右パディングに合わせ、テキストボックスとの間にスペースを設ける */
+    display: flex; /* ボタンを横に並べる */
+    gap: 10px; /* ボタン間のスペース */
+    flex-wrap: wrap; /* 画面幅が狭い場合に折り返す */
+    flex-shrink: 0; /* main内でボタンコンテナは高さを固定し、縮まないようにする */
+}
+
+/* フィルタリングボタンのスタイル */
+.filter-btn {
+    padding: 8px 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+    flex-grow: 1; /* ボタンが均等な幅になるようにする (オプション) */
+}
+
+.filter-btn:hover {
+    background-color: #eee;
+}
+
+/* 現在アクティブなボタンのスタイル */
+.filter-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* フィルタリングで非表示になったアイテム */
+.knowledge-item.hidden {
+    display: none !important; /* 強制的に非表示にする */
+}

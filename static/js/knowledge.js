@@ -8,7 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. すべての閉じるボタンを取得
     const closeButtons = document.querySelectorAll('.close-btn');
     
-    // アイテムクリック時の処理
+    // --- 【追加】フィルタリングボタンの取得 ---
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const triviaContainer = document.getElementById('knowledge-list-container-trivia');
+    
+    // アイテムクリック時の処理 (変更なし)
     knowledgeItems.forEach(item => {
         item.addEventListener('click', () => {
             // クリックされたアイテムの data-target 属性からモーダルのIDを取得
@@ -24,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // 閉じるボタンクリック時の処理
+    // 閉じるボタンクリック時の処理 (変更なし)
     closeButtons.forEach(button => {
         button.addEventListener('click', () => {
             // 親要素（モーダル）を非表示にする
@@ -34,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // モーダルの外側をクリックしたときの処理
+    // モーダルの外側をクリックしたときの処理 (変更なし)
     detailModals.forEach(modal => {
         modal.addEventListener('click', (event) => {
             // クリックされた要素がモーダル自体であるか確認
@@ -44,4 +48,42 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // ----------------------------------------------------
+    // --- 【追加】カテゴリフィルタリング機能のロジック ---
+    // ----------------------------------------------------
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const filterCategory = button.getAttribute('data-filter');
+
+            // 1. アクティブクラスの切り替え
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            // 2. 豆知識アイテムのフィルタリング
+            // アレンジレシピのアイテムを含まないように、ID指定のコンテナからアイテムを取得
+            const items = triviaContainer.querySelectorAll('.knowledge-item'); 
+            
+            items.forEach(item => {
+                // HTMLで追加した data-category 属性の値を取得
+                const itemCategory = item.getAttribute('data-category');
+                
+                // data-filter="全て" または カテゴリが一致する場合に表示
+                if (filterCategory === '全て' || itemCategory === filterCategory) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+        });
+    });
+
+    // ----------------------------------------------------
+    // --- 【追加】初期表示設定 ---
+    // ----------------------------------------------------
+    // ページロード時にデフォルトで「全て表示」または最初のボタンをクリックした状態にする
+    const defaultButton = document.querySelector('.filter-buttons .filter-btn:first-child');
+    if (defaultButton) {
+        defaultButton.click();
+    }
 });
