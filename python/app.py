@@ -1,13 +1,13 @@
-# app.py (完成版)
+# app.py
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
-from database import init_db, get_db
-from flask import session
 from models import User, LossReason, FoodLossRecord
-from pydantic import ValidationError # ★ ValidationErrorをインポート
 from schemas import LossRecordInput # ★ LossRecordInputをインポート
+from services import calculate_weekly_points_logic, add_new_loss_record_direct, get_weekly_stats, get_all_loss_reasons
+from datetime import datetime
+from database import init_db, get_db
+from pydantic import ValidationError # ★ ValidationErrorをインポート
+from statistics import get_total_grams_for_weeks, get_last_two_weeks 
 from user_service import get_user_by_username, register_new_user, get_user_profile
-from services import add_new_loss_record, calculate_weekly_points_logic
-from services import get_user_profile
 import datetime
 
 # --- アプリケーション初期設定 ---
@@ -16,59 +16,178 @@ app = Flask(__name__,
             static_folder='../static')
 
 app.secret_key = 'a_secure_and_complex_secret_key' 
-
 init_db()
 
+#未実装
 def login_required(func):
     """ログインしているかチェックするデコレータ"""
     def wrapper(*args, **kwargs):
         if 'user_id' not in session:
-            return redirect(url_for('index'))
+            return redirect(url_for('login'))
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__ # Flaskにルーティングを認識させる
     return wrapper
 
 @app.route("/")
 def index():
+    # ログイン済みであれば、直接 /input へリダイレクト
+    if 'user_id' in session:
+        return redirect(url_for('input'))
+        
+    # ログインしていなければ、login.html を表示
     return render_template('login.html')
 
-@app.route("/home")
-@login_required
-def home():
-    return render_template('home.html')
 
-@app.route("/input")
-@login_required
-def input_page():
-    return render_template('input.html', today=datetime.date.today())
+# app.py (input 関数のみ修正)
+
+@app.route("/input", methods=['GET', 'POST']) 
+@login_required # デコレータを適用
+# app.py (input 関数内の POST 処理部分のみ修正)
+def input():
+    # --- POSTリクエスト（フォーム送信時）の処理 ---
+    if request.method == 'POST':
+        user_id = session.get('user_id')
+        db = next(get_db())
+
+        try:
+            # 1. フォームデータ取得と検証
+            form_data = request.form.to_dict()
+            form_data['user_id'] = user_id
+            validated_data = LossRecordInput(**form_data)
+            
+            # 2. データベース挿入
+            record_id = add_new_loss_record_direct(db, validated_data.model_dump())
+            
+            # ★ 成功時のリダイレクト（ここで関数が終了し、302を返す）★
+            return redirect(url_for('input', success_message='記録が完了しました！'))
+
+        except ValidationError as e:
+            db.close()
+            # 失敗時: render_template で処理を終了
+            return render_template('input.html', 
+                                   today=datetime.date.today(), 
+                                   error_message='入力内容に誤りがあります。',
+                                   details=e.errors())
+        
+        except Exception as e:
+            db.rollback()
+            db.close()
+            # サーバーエラー時: render_template で処理を終了
+            return render_template('input.html', 
+                                   today=datetime.date.today(), 
+                                   error_message=f"サーバーエラーが発生しました: {str(e)}")
+        
+    # --- GETリクエスト（画面表示時）の処理 ---
+    # POST処理がスキップされた場合（GETの場合）のみ、このロジックが実行される
+    today = datetime.date.today()
+    success_message = request.args.get('success_message')
+
+    return render_template('input.html',
+                           today=today,
+                           active_page='input',
+                           success_message=success_message)
+
 
 @app.route("/log")
-@login_required
-def log_page():
-    return render_template('log.html',)
+def log():
+    # --- 基準日の取得 ---
+    # URLのクエリパラメータから日付を取得しようと試みる
+    date_str = request.args.get('date')
+    
+    target_date = None
+    if date_str:
+        try:
+            # 文字列をdateオブジェクトに変換
+            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            # フォーマットが不正な場合は今日の日付を使用
+            target_date = datetime.date.today()
+    else:
+        # パラメータがなければ今日の日付を使用
+        target_date = datetime.date.today()
 
-@app.route("/points")
-@login_required
-def points_page():
-    return render_template('points.html')
+    # --- 週の計算 ---
+    # 基準日をもとに、その週の日曜日を計算
+    start_of_week = target_date - datetime.timedelta(days=(target_date.weekday() + 1) % 7)
+    end_of_week = start_of_week + datetime.timedelta(days=6)
+
+    # --- 1週間分の日付リストを作成 ---
+    week_dates = []
+    jp_weekdays = ["日", "月", "火", "水", "木", "金", "土"]
+    for i in range(7):
+        current_day = start_of_week + datetime.timedelta(days=i)
+        week_dates.append({
+            "date": current_day,
+            "day_num": current_day.day,
+            "weekday_jp": jp_weekdays[(current_day.weekday() + 1) % 7]
+        })
+
+    # --- 前週と次週の日付を計算 ---
+    # 表示している週の日曜から7日前と7日後を計算
+    prev_week_date = start_of_week - datetime.timedelta(days=7)
+    next_week_date = start_of_week + datetime.timedelta(days=7)
+
+    # --- 表示用の日付範囲を作成 ---
+    week_range_str = f"{start_of_week.month}月{start_of_week.day}日 〜 {end_of_week.month}月{end_of_week.day}日"
+
+    # HTMLテンプレートにデータを渡してレンダリング
+    return render_template('log.html',
+                           today=datetime.date.today(), # 「今日」をハイライトするために別途渡す
+                           week_dates=week_dates,
+                           week_range=week_range_str,
+                           prev_week=prev_week_date.strftime('%Y-%m-%d'),
+                           next_week=next_week_date.strftime('%Y-%m-%d'),
+                           active_page='log'
+                           )
+
+@app.route("/points", methods=['GET', 'POST'])
+def points():
+    return render_template('points.html',
+                           active_page='points'
+                           )
+
+@app.route("/knowledge")
+def knowledge():
+    return render_template('knowledge.html',
+                           active_page='knowledge'
+                           )
+
+@app.route("/account")
+def account():
+    return render_template('account.html',
+                           active_page='account'
+                           )
+
 
 @app.route('/login', methods=['POST'])
 def login():
     db = next(get_db())
     username = request.form.get('username')
+    # パスワードはフォームから取得するが、現時点では使用しない（本番環境化で利用）
+    # password = request.form.get('password') 
+    
+    # 1. ユーザー名が空欄でないかの必須チェック
+    # .strip() は、スペースのみの入力も空欄とみなす
+    if not username or not username.strip():
+        db.close()
+        return render_template('login.html', error="ユーザー名を入力してください。")
     
     try:
-        user = get_user_by_username(db, username) # Services層でユーザーを取得
+        # 2. ユーザーの存在チェック
+        user = get_user_by_username(db, username)
         
         if user:
-            # ★【テスト環境用】認証スキップとセッション保存 ★
+            # 【テスト環境用】: パスワードチェックをスキップし、ユーザーの存在のみでログイン成功と見なす
             session['user_id'] = user.id
-            return redirect(url_for('home'))
+            return redirect(url_for('input')) # ログイン成功後、入力画面へリダイレクト
         else:
-            return render_template('login.html', error="ユーザーが見つかりません。")
+            # ユーザーが存在しないため、ログイン失敗
+            return render_template('login.html', error="ユーザー名またはパスワードが間違っています。")
 
     except Exception as e:
-        return render_template('login.html', error=f"エラーが発生しました: {str(e)}")
+        # データベース接続などの例外処理
+        print(f"ログイン中にエラーが発生しました: {str(e)}")
+        return render_template('login.html', error=f"サーバーエラー: {str(e)}")
     finally:
         db.close()
 
@@ -110,11 +229,10 @@ def add_loss_record_api():
     db = next(get_db())
     try:
         # ★ 1. Pydanticでデータの検証と型変換を一度に行う ★
-        # これが必須項目の欠損、型、ビジネスルール（重量が負ではないか）を全てチェックします。
         validated_data = LossRecordInput(**data)
         
         # 2. Services層へ処理を渡す
-        record_id = add_new_loss_record(db, validated_data.model_dump()) 
+        record_id = add_new_loss_record_direct(db, validated_data.model_dump())
         # NOTE: validated_data.model_dump() でPydanticオブジェクトをPython辞書に変換して渡す
 
         return jsonify({"message": "記録完了！", "record_id": record_id}), 201
@@ -190,6 +308,38 @@ def get_user_profile_api():
         return jsonify({"message": f"プロフィールの取得中にエラーが発生しました: {str(e)}"}), 500
     finally:
         db.close()
+
+@app.route("/api/weekly_stats", methods=["GET"])
+def get_weekly_stats_api():
+    user_id = session.get('user_id') 
+    if not user_id:
+        return jsonify({"message": "認証が必要です。"}), 401 
+
+    # URLクエリパラメータから基準日を取得
+    date_str = request.args.get('date')
+    target_date = datetime.date.today()
+    if date_str:
+        try:
+            # log.htmlが渡す 'YYYY-MM-DD' 形式を解析
+            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass # 不正な場合は今日の日付を使用
+
+    db = next(get_db())
+    try:
+        # Services層を呼び出し、週次データを取得
+        stats_data = get_weekly_stats(db, user_id, target_date)
+        
+        return jsonify(stats_data), 200
+        
+    except Exception as e:
+        return jsonify({"message": f"統計データの取得中にエラーが発生しました: {str(e)}"}), 500
+    finally:
+        db.close()
+
+@app.route("/register")
+def register_page():
+    return render_template('register.html')
 
 # --- サーバー実行 ---
 if __name__ == "__main__":

@@ -14,18 +14,13 @@
             
             <div class="card">
                 <div class="form-group">
-                    <label for="dish1">料理名</label>
-                    <input type="text" id="dish1" name="dish1" placeholder="例: カレーライス" />
+                    <label for="dish1">料理名 / 廃棄品目名</label>
+                    <input type="text" id="dish1" name="item_name" placeholder="例: カレーライス、牛乳の残渣" required />
                 </div>
                 
                 <div class="form-group">
-                    <label for="waste1">廃棄物</label>
-                    <input type="text" id="waste1" name="waste1" placeholder="例: 人参の皮、食べ残し" />
-                </div>
-
-                <div class="form-group">
                     <label for="amount1">廃棄量[g]</label>
-                    <input type="number" id="amount1" name="amount1" placeholder="例: 100" />
+                    <input type="number" id="amount1" name="weight_grams" placeholder="例: 100" required />
                 </div>
             </div>
 
