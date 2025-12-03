@@ -1,4 +1,4 @@
-# app.py
+# app.py (完成版)
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from models import User, LossReason, FoodLossRecord
 from schemas import LossRecordInput # ★ LossRecordInputをインポート
@@ -22,27 +22,27 @@ init_db()
 def login_required(func):
     """ログインしているかチェックするデコレータ"""
     def wrapper(*args, **kwargs):
+        
+        # --- ★デバッグ用に追加 (ここから)★ ---
+        print(f"--- デコレータ実行 ({func.__name__}) ---")
+        print(f"現在のセッション: {session}")
+        # --- ★デバッグ用に追加 (ここまで)★ ---
+
         if 'user_id' not in session:
+            print("セッションに user_id が見つからないため /login へリダイレクトします") # ★デバッグ用
             return redirect(url_for('login'))
+        
+        print("セッションOK。ページを表示します。") # ★デバッグ用
         return func(*args, **kwargs)
-    wrapper.__name__ = func.__name__ # Flaskにルーティングを認識させる
+    
+    wrapper.__name__ = func.__name__ 
     return wrapper
 
 @app.route("/")
 def index():
-    # ログイン済みであれば、直接 /input へリダイレクト
-    if 'user_id' in session:
-        return redirect(url_for('input'))
-        
-    # ログインしていなければ、login.html を表示
     return render_template('login.html')
 
-
-# app.py (input 関数のみ修正)
-
-@app.route("/input", methods=['GET', 'POST']) 
-@login_required # デコレータを適用
-# app.py (input 関数内の POST 処理部分のみ修正)
+@app.route("/input")
 def input():
     # --- POSTリクエスト（フォーム送信時）の処理 ---
     if request.method == 'POST':
@@ -88,7 +88,9 @@ def input():
                            success_message=success_message)
 
 
+
 @app.route("/log")
+@login_required
 def log():
     # --- 基準日の取得 ---
     # URLのクエリパラメータから日付を取得しようと試みる
@@ -140,13 +142,15 @@ def log():
                            active_page='log'
                            )
 
-@app.route("/points", methods=['GET', 'POST'])
+@app.route("/points")
+@login_required
 def points():
     return render_template('points.html',
                            active_page='points'
                            )
 
 @app.route("/knowledge")
+@login_required
 def knowledge():
     return render_template('knowledge.html',
                            active_page='knowledge'
@@ -159,35 +163,23 @@ def account():
                            )
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     db = next(get_db())
     username = request.form.get('username')
-    # パスワードはフォームから取得するが、現時点では使用しない（本番環境化で利用）
-    # password = request.form.get('password') 
-    
-    # 1. ユーザー名が空欄でないかの必須チェック
-    # .strip() は、スペースのみの入力も空欄とみなす
-    if not username or not username.strip():
-        db.close()
-        return render_template('login.html', error="ユーザー名を入力してください。")
     
     try:
-        # 2. ユーザーの存在チェック
-        user = get_user_by_username(db, username)
+        user = get_user_by_username(db, username) # Services層でユーザーを取得
         
         if user:
-            # 【テスト環境用】: パスワードチェックをスキップし、ユーザーの存在のみでログイン成功と見なす
+            # ★【テスト環境用】認証スキップとセッション保存 ★
             session['user_id'] = user.id
-            return redirect(url_for('input')) # ログイン成功後、入力画面へリダイレクト
+            return redirect(url_for('input'))
         else:
-            # ユーザーが存在しないため、ログイン失敗
-            return render_template('login.html', error="ユーザー名またはパスワードが間違っています。")
+            return render_template('input.html', error="ユーザーが見つかりません。")
 
     except Exception as e:
-        # データベース接続などの例外処理
-        print(f"ログイン中にエラーが発生しました: {str(e)}")
-        return render_template('login.html', error=f"サーバーエラー: {str(e)}")
+        return render_template('input.html', error=f"エラーが発生しました: {str(e)}")
     finally:
         db.close()
 

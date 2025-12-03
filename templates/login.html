@@ -11,22 +11,19 @@
     <form id="login-form" method="POST" action="{{ url_for('login') }}">
         <h1>ユーザーログイン</h1>
 
-        {% if error %}
-            <p style="color: red;">{{ error }}</p>
-        {% endif %}
+        <input type="email" id="email" name="email" placeholder="Email" value="test@example.com" />
 
-        <input type="text" id="username" name="username" placeholder="ユーザー名" required />
+        <input type="text" id="username" name="username" placeholder="Username" value="test_user" />
 
-        <input type="password" id="password" name="password" placeholder="パスワード" />
-        
+        <input type="password" id="password" name="password" placeholder="Password" value="13d249f2cb4127b40cfa757866850278793f814ded3c587fe5889e889a7a9f6c"/>
+
         <button type="submit" id="login-button">ログイン</button>
-        
-        <p style="margin-top: 20px;">
-            アカウントをお持ちでないですか？ 
-            <button type="button" onclick='window.location.href="{{ url_for("register_page") }}"' id="create-account-button">
-                新規登録はこちら
-            </button>
-        </p>
+
+        <p class="head-border">アカウントがない場合</p>
+
+        <button type="button" id="create-account-button" onclick="window.location.href='{{ url_for('register') }}'">
+        アカウント作成
+        </button>
     </form>
 </body>
 </html>
