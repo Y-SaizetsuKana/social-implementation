@@ -146,12 +146,15 @@ def input():
             # サーバーエラー時: render_template で処理を終了
             return render_template('input.html', 
                                    today=today, 
+                                   active_page='input',
                                    error_message=f"サーバーエラーが発生しました: {str(e)}")
         
     # --- GETリクエスト（画面表示時）の処理 ---
     # POST処理がスキップされた場合（GETの場合）のみ、このロジックが実行される
     success_message = request.args.get('success_message')
-
+    
+    print(f"--- GETリクエスト /input ページ表示 ---") # ★デバッグ用
+    
     return render_template('input.html',
                            today=today,
                            active_page='input',
