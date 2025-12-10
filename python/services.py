@@ -1,37 +1,18 @@
 # services.py (冒頭部分の修正案)
-
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from models import User, FoodLossRecord, LossReason
-from schemas import LossRecordInput # schemas.pyで定義したPydanticスキーマをインポート
-import hashlib # ★ 追加 (パスワードハッシュ化のため)
-from datetime import datetime, timedelta # ★ timedeltaとdatetimeは既に使われているため、インポートを明確にする
-from typing import Dict, Any, Tuple
-
-
-# ★ get_last_two_weeks 関数を services.py の中で直接定義 ★
-def get_last_two_weeks(today: datetime) -> Dict[str, Tuple[datetime, datetime]]:
-    """
-    今週と先週の月曜日と日曜日の日時境界を計算する。（自己完結型）
-    """
-    # 0=月曜日, 6=日曜日
-    days_to_monday = today.weekday() 
-    
-    # 既存のロジックをそのまま使用
-    days_since_monday = today.weekday() 
-    this_monday = (today - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
-    this_sunday = (this_monday + timedelta(days=6)).replace(hour=23, minute=59, second=59, microsecond=999999)
-    last_monday = this_monday - timedelta(weeks=1)
-    last_sunday = this_sunday - timedelta(weeks=1)
-
-    return {
-        "this_week": (this_monday, this_sunday),
-        "last_week": (last_monday, last_sunday)
-    }
-
-# --- ユーザー関連サービス ---
-# ... (他の関数が続く) ...
-# --- ユーザー関連サービス ---
+from schemas import LossRecordInput
+import hashlib 
+from datetime import datetime, timedelta 
+from typing import Dict, Any, List, Optional, Tuple # Tuple, List, Optional を忘れずにインポート
+from statistics import (
+    get_week_boundaries,
+    get_total_grams_for_week,
+    get_total_grams_for_weeks,
+    get_last_two_weeks, # ★ この行を追加 ★
+    # calculate_weekly_statistics (※統計表示用なのでservicesでは不要)
+)
 
 def register_new_user(db: Session, username: str, email: str, password: str) -> int:
     """
@@ -68,7 +49,6 @@ def get_user_by_id(db: Session, user_id: int) -> User | None:
     IDでユーザーオブジェクトを取得する。
     """
     return db.query(User).get(user_id)
-
 
 def add_new_loss_record(db: Session, record_data: Dict[str, Any]) -> int:
     """
@@ -208,3 +188,121 @@ def calculate_weekly_points_logic(db: Session, user_id: int) -> Dict[str, Any]:
         "rate_last_week": round(rate_last_week * 100, 2),
         "rate_baseline": round(rate_baseline * 100, 2)
     }
+
+def get_all_loss_reasons(db: Session) -> List[str]:
+    """
+    データベースに登録されている全ての廃棄理由のテキストをリストで取得する。
+    """
+    # LossReasonモデルから reason_text の値のみをすべて取得
+    reasons = db.query(LossReason.reason_text).order_by(LossReason.id).all()
+    
+    # [('理由1',), ('理由2',)...] -> ['理由1', '理由2', ...] の形式に変換
+    return [r[0] for r in reasons]
+
+def get_user_profile(db: Session, user_id: int) -> Dict[str, Any] | None:
+    """
+    ユーザーIDから表示に必要な情報（ユーザー名、ポイント）を取得する。
+    """
+    user = db.query(User).filter_by(id=user_id).first()
+    
+    if user:
+        return {
+            "user_id": user.id,
+            "username": user.username,
+            "total_points": user.total_points,
+            # ここに必要に応じて address, family_size などの情報を追加
+        }
+    return None
+
+def add_new_loss_record_direct(db: Session, record_data: Dict[str, Any]) -> int:
+    """
+    検証済みの廃棄記録データ（辞書形式）をデータベースに挿入する純粋なロジック。
+    
+    Args:
+        db: データベースセッション
+        record_data: 必須項目を含み、型チェック済みのクリーンなデータ辞書
+        
+    Returns:
+        挿入されたレコードのID
+    """
+    
+    # 1. 外部キー（LossReason）の存在チェックとID取得
+    # このチェックは、データがDBに存在する理由テキストを参照しているか確認するために必要
+    reason = db.query(LossReason).filter_by(reason_text=record_data['reason_text']).first()
+    
+    if not reason:
+        # 理由が見つからない場合、外部キー制約違反になるため、エラーを発生させる
+        raise ValueError(f"無効な廃棄理由: {record_data['reason_text']}")
+
+    # 2. データベースへの挿入（SQLAlchemyモデルのインスタンス化）
+    new_record = FoodLossRecord(
+        user_id=record_data['user_id'],
+        item_name=record_data['item_name'],
+        weight_grams=record_data['weight_grams'],
+        loss_reason_id=reason.id, # 外部キーIDを使用
+        # record_date は models.py の設定により自動挿入される
+    )
+    
+    db.add(new_record)
+    db.commit() # 変更を永続化
+    db.refresh(new_record) # 挿入されたレコードのIDなどを取得
+    
+    return new_record.id
+
+def get_start_and_end_of_week(target_date: datetime.date) -> Tuple[datetime.date, datetime.date]:
+    """与えられた日付を含む週の日曜と土曜を返す (日曜日を週の始まりとする)。"""
+    # target_date.weekday() は月曜(0)から日曜(6)
+    start_of_week = target_date - datetime.timedelta(days=(target_date.weekday() + 1) % 7)
+    end_of_week = start_of_week + datetime.timedelta(days=6)
+    return start_of_week, end_of_week
+
+def get_weekly_stats(db: Session, user_id: int, target_date: datetime.date) -> Dict[str, Any]:
+    """
+    指定された日付を含む週の統計データ（グラフ用、表用）を取得し、JSが期待する形式に整形する。
+    """
+    start_of_week, end_of_week = get_start_and_end_of_week(target_date)
+    
+    # 1. 週間記録を全て取得
+    records = db.query(FoodLossRecord, LossReason.reason_text) \
+        .join(LossReason) \
+        .filter(
+            FoodLossRecord.user_id == user_id,
+            FoodLossRecord.record_date.between(start_of_week, end_of_week)
+        ) \
+        .order_by(FoodLossRecord.record_date) \
+        .all()
+        
+    dish_table_data = [
+        {
+            "date": rec.FoodLossRecord.record_date.strftime('%m/%d'),
+            "dish_name": rec.FoodLossRecord.item_name,
+            "weight_grams": rec.FoodLossRecord.weight_grams,
+            "reason": rec.reason_text
+        }
+        for rec in records
+    ]
+    
+    # 2. 日別合計グラム数を計算 (グラフデータ用)
+    daily_grams = {day: 0.0 for day in ['日', '月', '火', '水', '木', '金', '土']}
+    
+    # データを集計
+    for rec in records:
+        day_of_week_index = (rec.FoodLossRecord.record_date.weekday() + 1) % 7 # 0=日, 1=月...
+        day_name = ['日', '月', '火', '水', '木', '金', '土'][day_of_week_index]
+        daily_grams[day_name] += rec.FoodLossRecord.weight_grams
+        
+    daily_graph_data = [
+        {"day": day, "total_grams": daily_grams[day]}
+        for day in daily_grams.keys()
+    ]
+    
+    # 3. 最終的なレスポンス形式に整形
+    is_data_present = len(records) > 0
+
+    return {
+        "is_data_present": is_data_present,
+        "week_start": start_of_week.strftime('%Y-%m-%d'),
+        "daily_graph_data": daily_graph_data,
+        "dish_table": dish_table_data
+    }
+
