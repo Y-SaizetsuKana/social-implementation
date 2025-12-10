@@ -29,10 +29,6 @@ def get_last_two_weeks(today: datetime) -> Dict[str, Tuple[datetime, datetime]]:
         "last_week": (last_monday, last_sunday)
     }
 
-# --- ユーザー関連サービス ---
-# ... (他の関数が続く) ...
-# --- ユーザー関連サービス ---
-
 def register_new_user(db: Session, username: str, email: str, password: str) -> int:
     """
     新しいユーザーをデータベースに登録する。

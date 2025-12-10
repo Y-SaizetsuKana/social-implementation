@@ -112,7 +112,7 @@ def register():
     return render_template('register.html')
 
 
-
+"""
 @app.route("/input")
 @login_required
 def input():
@@ -121,7 +121,43 @@ def input():
                            today=today,
                            active_page='input'
                            )
+"""
 
+@app.route("/input", methods=['GET', 'POST'])
+def input():
+    # --- POSTリクエスト（フォーム送信時）の処理 ---
+    if request.method == 'POST':
+        user_id = session.get('user_id')
+        db = next(get_db())
+
+        try:
+            # 1. フォームデータ取得と検証
+            form_data = request.form.to_dict()
+            form_data['user_id'] = user_id
+            validated_data = LossRecordInput(**form_data)
+            
+            # 2. データベース挿入
+            record_id = add_new_loss_record_direct(db, validated_data.model_dump())
+            
+            # ★ 成功時のリダイレクト（ここで関数が終了し、302を返す）★
+            return redirect(url_for('input', success_message='記録が完了しました！'))
+
+        except ValidationError as e:
+            db.close()
+            # 失敗時: render_template で処理を終了
+            return render_template('input.html', 
+                                   today=datetime.date.today(), 
+                                   error_message='入力内容に誤りがあります。',
+                                   details=e.errors())
+        
+        except Exception as e:
+            db.rollback()
+            db.close()
+            # サーバーエラー時: render_template で処理を終了
+            return render_template('input.html', 
+                                   today=datetime.date.today(), 
+                                   error_message=f"サーバーエラーが発生しました: {str(e)}")
+        
 
 @app.route("/log")
 @login_required
