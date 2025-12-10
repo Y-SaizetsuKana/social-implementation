@@ -4,7 +4,7 @@ from sqlalchemy import func
 from models import User, FoodLossRecord, LossReason
 from schemas import LossRecordInput
 import hashlib 
-from datetime import datetime, timedelta 
+from datetime import datetime, timedelta , date, time
 from typing import Dict, Any, List, Optional, Tuple # Tuple, List, Optional を忘れずにインポート
 from statistics import (
     get_week_boundaries,
@@ -252,29 +252,47 @@ def add_new_loss_record_direct(db: Session, record_data: Dict[str, Any]) -> int:
 def get_start_and_end_of_week(target_date: datetime.date) -> Tuple[datetime.date, datetime.date]:
     """与えられた日付を含む週の日曜と土曜を返す (日曜日を週の始まりとする)。"""
     # target_date.weekday() は月曜(0)から日曜(6)
-    start_of_week = target_date - datetime.timedelta(days=(target_date.weekday() + 1) % 7)
-    end_of_week = start_of_week + datetime.timedelta(days=6)
+    start_of_week = target_date - timedelta(days=(target_date.weekday() + 1) % 7)
+    end_of_week = start_of_week + timedelta(days=6)
     return start_of_week, end_of_week
 
-def get_weekly_stats(db: Session, user_id: int, target_date: datetime.date) -> Dict[str, Any]:
+def get_start_and_end_of_week(target_date: date) -> Tuple[date, date]:
+    """与えられた日付を含む週の日曜と土曜を返す (日曜日を週の始まりとする)。"""
+    # target_date.weekday() は月曜(0)から日曜(6)
+    start_of_week = target_date - timedelta(days=(target_date.weekday() + 1) % 7)
+    end_of_week = start_of_week + timedelta(days=6)
+    return start_of_week, end_of_week
+
+def get_weekly_stats(db: Session, user_id: int, target_date: date) -> Dict[str, Any]:
     """
     指定された日付を含む週の統計データ（グラフ用、表用）を取得し、JSが期待する形式に整形する。
     """
-    start_of_week, end_of_week = get_start_and_end_of_week(target_date)
+    date_start_of_week, date_end_of_week = get_start_and_end_of_week(target_date)
+
+    # 1. データベースクエリ用のISO文字列境界を作成
+    # Start: YYYY-MM-DDTHH:MM:SS.ffffff (00:00:00)
+    datetime_start = datetime.combine(date_start_of_week, time.min) # ★ 修正: time.minを使用
+    # End: YYYY-MM-DDTHH:MM:SS.ffffff (23:59:59.999999)
+    datetime_end = datetime.combine(date_end_of_week, time.max) # ★ 修正: time.maxを使用
     
-    # 1. 週間記録を全て取得
+    start_str = datetime_start.isoformat()
+    end_str = datetime_end.isoformat()
+    
+    # 2. 週間記録を全て取得
     records = db.query(FoodLossRecord, LossReason.reason_text) \
         .join(LossReason) \
         .filter(
             FoodLossRecord.user_id == user_id,
-            FoodLossRecord.record_date.between(start_of_week, end_of_week)
+            # ★ 修正: ISO文字列で比較することで、範囲内の全てのタイムスタンプを捕捉 ★
+            FoodLossRecord.record_date.between(start_str, end_str) 
         ) \
         .order_by(FoodLossRecord.record_date) \
         .all()
         
     dish_table_data = [
         {
-            "date": rec.FoodLossRecord.record_date.strftime('%m/%d'),
+            # ★ 修正: ISO文字列をdatetimeオブジェクトに変換してからstrftimeを呼び出す ★
+            "date": datetime.fromisoformat(rec.FoodLossRecord.record_date).strftime('%m/%d'),
             "dish_name": rec.FoodLossRecord.item_name,
             "weight_grams": rec.FoodLossRecord.weight_grams,
             "reason": rec.reason_text
@@ -282,12 +300,14 @@ def get_weekly_stats(db: Session, user_id: int, target_date: datetime.date) -> D
         for rec in records
     ]
     
-    # 2. 日別合計グラム数を計算 (グラフデータ用)
+    # 3. 日別合計グラム数を計算 (グラフデータ用)
     daily_grams = {day: 0.0 for day in ['日', '月', '火', '水', '木', '金', '土']}
     
     # データを集計
     for rec in records:
-        day_of_week_index = (rec.FoodLossRecord.record_date.weekday() + 1) % 7 # 0=日, 1=月...
+        # ★ 修正: ISO文字列をdatetimeオブジェクトに変換してからweekdayを呼び出す ★
+        record_datetime = datetime.fromisoformat(rec.FoodLossRecord.record_date)
+        day_of_week_index = (record_datetime.weekday() + 1) % 7 # 0=日, 1=月...
         day_name = ['日', '月', '火', '水', '木', '金', '土'][day_of_week_index]
         daily_grams[day_name] += rec.FoodLossRecord.weight_grams
         
@@ -296,12 +316,12 @@ def get_weekly_stats(db: Session, user_id: int, target_date: datetime.date) -> D
         for day in daily_grams.keys()
     ]
     
-    # 3. 最終的なレスポンス形式に整形
+    # 4. 最終的なレスポンス形式に整形
     is_data_present = len(records) > 0
 
     return {
         "is_data_present": is_data_present,
-        "week_start": start_of_week.strftime('%Y-%m-%d'),
+        "week_start": date_start_of_week.strftime('%Y-%m-%d'),
         "daily_graph_data": daily_graph_data,
         "dish_table": dish_table_data
     }

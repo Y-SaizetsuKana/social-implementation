@@ -457,11 +457,11 @@ def get_weekly_stats_api():
 
     # URLクエリパラメータから基準日を取得
     date_str = request.args.get('date')
-    target_date = datetime.date.today()
+    target_date = date.today()
     if date_str:
         try:
             # log.htmlが渡す 'YYYY-MM-DD' 形式を解析
-            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
             pass # 不正な場合は今日の日付を使用
 
