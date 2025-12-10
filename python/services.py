@@ -340,3 +340,55 @@ def get_weekly_stats(db: Session, user_id: int, target_date: date) -> Dict[str, 
         "dish_table": dish_table_data
     }
 
+def add_test_loss_records(db: Session, user_id: int) -> bool:
+    """
+    ユーザーのフードロス記録がまだ存在しない場合、テストデータを挿入する。
+    """
+    # 既にレコードが存在するかチェックし、存在する場合は挿入をスキップ
+    if db.query(FoodLossRecord).filter_by(user_id=user_id).first():
+        print(f"User {user_id} already has records. Skipping test data insertion.")
+        return False
+    
+    # LossReasonのIDを取得
+    # NOTE: database.pyのinit_db()で以下の理由が投入されていることを前提とする
+    reason_expired = db.query(LossReason).filter_by(reason_text="期限切れ").first()
+    reason_eaten = db.query(LossReason).filter_by(reason_text="料理後の廃棄").first()
+    
+    if not reason_expired or not reason_eaten:
+        print("Error: Loss reasons not found. Cannot insert test data.")
+        return False
+        
+    # テストデータを挿入する日付を決定
+    today = datetime.now()
+    # 記録を過去の任意の日付（例：5日前と3日前）で作成し、今週の統計に反映されるようにする
+    a_week_ago = today - timedelta(days=7)
+
+    records = [
+        FoodLossRecord(
+            user_id=user_id,
+            item_name="牛乳 (期限切れ)",
+            weight_grams=1000.0,
+            loss_reason_id=reason_expired.id,
+            # ISOフォーマット文字列に変換して挿入
+            record_date=a_week_ago.isoformat()
+        ),
+        FoodLossRecord(
+            user_id=user_id,
+            item_name="カレーの食べ残し",
+            weight_grams=350.5,
+            loss_reason_id=reason_eaten.id,
+            record_date=a_week_ago.isoformat()
+        ),
+        FoodLossRecord(
+            user_id=user_id,
+            item_name="ご飯 (期限切れ)",
+            weight_grams=500.0,
+            loss_reason_id=reason_expired.id,
+            record_date=today.isoformat()
+        )
+    ]
+    
+    db.add_all(records)
+    db.commit()
+    print(f"Inserted {len(records)} test records for user {user_id}.")
+    return True

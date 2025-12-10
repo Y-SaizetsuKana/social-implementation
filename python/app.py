@@ -8,7 +8,8 @@ from services import (
     calculate_weekly_points_logic, # ポイント計算ロジック
     get_user_by_id,
     get_weekly_stats,
-    get_all_loss_reasons
+    get_all_loss_reasons,
+    add_test_loss_records
     # ★ get_user_by_id など、services.pyで定義した関数は必要に応じてインポート
 )
 from schemas import LossRecordInput
@@ -269,6 +270,8 @@ def login():
             
             if user: # ログイン成功
                 session['user_id'] = user.id
+                
+                add_test_loss_records(db, user.id) 
                 
                 print(f"--- ログイン成功 (user.id: {user.id}) ---")
                 print(f"現在のセッション: {session}")
