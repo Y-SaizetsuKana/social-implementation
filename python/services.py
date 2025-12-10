@@ -267,13 +267,12 @@ def get_weekly_stats(db: Session, user_id: int, target_date: date) -> Dict[str, 
     """
     指定された日付を含む週の統計データ（グラフ用、表用）を取得し、JSが期待する形式に整形する。
     """
+    # target_dateから週の始まりと終わり（日曜〜土曜）を計算
     date_start_of_week, date_end_of_week = get_start_and_end_of_week(target_date)
 
     # 1. データベースクエリ用のISO文字列境界を作成
-    # Start: YYYY-MM-DDTHH:MM:SS.ffffff (00:00:00)
-    datetime_start = datetime.combine(date_start_of_week, time.min) # ★ 修正: time.minを使用
-    # End: YYYY-MM-DDTHH:MM:SS.ffffff (23:59:59.999999)
-    datetime_end = datetime.combine(date_end_of_week, time.max) # ★ 修正: time.maxを使用
+    datetime_start = datetime.combine(date_start_of_week, time.min)
+    datetime_end = datetime.combine(date_end_of_week, time.max)
     
     start_str = datetime_start.isoformat()
     end_str = datetime_end.isoformat()
@@ -283,40 +282,55 @@ def get_weekly_stats(db: Session, user_id: int, target_date: date) -> Dict[str, 
         .join(LossReason) \
         .filter(
             FoodLossRecord.user_id == user_id,
-            # ★ 修正: ISO文字列で比較することで、範囲内の全てのタイムスタンプを捕捉 ★
+            # ISO文字列で比較することで、範囲内の全てのタイムスタンプを捕捉
             FoodLossRecord.record_date.between(start_str, end_str) 
         ) \
         .order_by(FoodLossRecord.record_date) \
         .all()
         
+    # 2-b. 週間廃棄品目一覧のデータを作成 (テーブル用)
     dish_table_data = [
         {
-            # ★ 修正: ISO文字列をdatetimeオブジェクトに変換してからstrftimeを呼び出す ★
+            # 日付を 'MM/DD' 形式に変換
             "date": datetime.fromisoformat(rec.FoodLossRecord.record_date).strftime('%m/%d'),
             "dish_name": rec.FoodLossRecord.item_name,
-            "weight_grams": rec.FoodLossRecord.weight_grams,
+            # 小数点以下1桁に丸める
+            "weight_grams": round(rec.FoodLossRecord.weight_grams, 1), 
             "reason": rec.reason_text
         }
         for rec in records
     ]
     
-    # 3. 日別合計グラム数を計算 (グラフデータ用)
-    daily_grams = {day: 0.0 for day in ['日', '月', '火', '水', '木', '金', '土']}
-    
-    # データを集計
+    # --- 3. 日別合計グラム数を計算 (Pythonで集計) ---
+    # キー: YYYY-MM-DD
+    daily_grams_aggregation = {}
     for rec in records:
-        # ★ 修正: ISO文字列をdatetimeオブジェクトに変換してからweekdayを呼び出す ★
-        record_datetime = datetime.fromisoformat(rec.FoodLossRecord.record_date)
-        day_of_week_index = (record_datetime.weekday() + 1) % 7 # 0=日, 1=月...
-        day_name = ['日', '月', '火', '水', '木', '金', '土'][day_of_week_index]
-        daily_grams[day_name] += rec.FoodLossRecord.weight_grams
+        # レコードの日付部分を取得
+        record_date = datetime.fromisoformat(rec.FoodLossRecord.record_date).date()
+        date_str = record_date.strftime('%Y-%m-%d')
+        grams = rec.FoodLossRecord.weight_grams
         
-    daily_graph_data = [
-        {"day": day, "total_grams": daily_grams[day]}
-        for day in daily_grams.keys()
-    ]
+        daily_grams_aggregation[date_str] = daily_grams_aggregation.get(date_str, 0.0) + grams
+        
+    # --- 4. 全曜日をカバーし、グラフデータを作成 (日曜始まりで順序を保証) ---
+    daily_graph_data = []
+    jp_weekdays = ["日", "月", "火", "水", "木", "金", "土"]
+    current_date = date_start_of_week # 日曜日から開始
+    for i in range(7):
+        date_str = current_date.strftime('%Y-%m-%d')
+        # i=0が日曜日、i=6が土曜日
+        day_name = jp_weekdays[i]
+        
+        # 該当日の合計を取得（データがなければ 0.0）
+        grams = round(daily_grams_aggregation.get(date_str, 0.0), 1)
+        
+        daily_graph_data.append({
+            "day": day_name, 
+            "total_grams": grams
+        })
+        current_date += timedelta(days=1) # 次の日へ
     
-    # 4. 最終的なレスポンス形式に整形
+    # 5. 最終的なレスポンス形式に整形
     is_data_present = len(records) > 0
 
     return {
