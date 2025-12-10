@@ -1,21 +1,21 @@
 # app.py 
 from flask import Flask, request, jsonify, render_template, make_response, redirect, url_for, session
 from database import init_db, get_db
-from flask import session
-from models import User, LossReason, FoodLossRecord
-from statistics import get_total_grams_for_weeks, get_last_two_weeks 
-from pydantic import ValidationError # ★ ValidationErrorをインポート
-from schemas import LossRecordInput # ★ LossRecordInputをインポート
 from services import ( 
     register_new_user, 
-    add_new_loss_record, 
+    add_new_loss_record_direct, 
     get_user_by_username, # ログイン認証用
     calculate_weekly_points_logic, # ポイント計算ロジック
-    get_user_by_id
+    get_user_by_id,
+    get_weekly_stats,
+    get_all_loss_reasons
     # ★ get_user_by_id など、services.pyで定義した関数は必要に応じてインポート
 )
-from datetime import datetime, timedelta, timezone
+from schemas import LossRecordInput
+from datetime import datetime, timedelta, timezone, date
 from knowledge import bp as knowledge_bp
+from pydantic import ValidationError # ★ ValidationErrorをインポート
+from user_service import get_user_profile
 
 # --- アプリケーション初期設定 ---
 app = Flask(__name__,
@@ -27,8 +27,6 @@ app.register_blueprint(knowledge_bp)
 # ★ 必須: セッションを使うためのSECRET_KEYを設定する ★
 # 本番環境では環境変数から読み込む必要があります
 app.secret_key = 'a_secure_and_complex_secret_key' 
-
-# アプリケーション起動時にデータベースを初期化
 init_db()
 
 # --- 画面ルーティング ---
@@ -112,19 +110,10 @@ def register():
     return render_template('register.html')
 
 
-"""
-@app.route("/input")
-@login_required
-def input():
-    today = datetime.today().date()
-    return render_template('input.html',
-                           today=today,
-                           active_page='input'
-                           )
-"""
 
 @app.route("/input", methods=['GET', 'POST'])
 def input():
+    today = date.today()
     # --- POSTリクエスト（フォーム送信時）の処理 ---
     if request.method == 'POST':
         user_id = session.get('user_id')
@@ -146,7 +135,7 @@ def input():
             db.close()
             # 失敗時: render_template で処理を終了
             return render_template('input.html', 
-                                   today=datetime.date.today(), 
+                                   today=today, 
                                    error_message='入力内容に誤りがあります。',
                                    details=e.errors())
         
@@ -155,9 +144,22 @@ def input():
             db.close()
             # サーバーエラー時: render_template で処理を終了
             return render_template('input.html', 
-                                   today=datetime.date.today(), 
+                                   today=today, 
+                                   active_page='input',
                                    error_message=f"サーバーエラーが発生しました: {str(e)}")
         
+    # --- GETリクエスト（画面表示時）の処理 ---
+    # POST処理がスキップされた場合（GETの場合）のみ、このロジックが実行される
+    success_message = request.args.get('success_message')
+    
+    print(f"--- GETリクエスト /input ページ表示 ---") # ★デバッグ用
+    
+    return render_template('input.html',
+                           today=today,
+                           active_page='input',
+                           success_message=success_message)
+
+
 
 @app.route("/log")
 @login_required
@@ -173,10 +175,10 @@ def log():
             target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
             # フォーマットが不正な場合は今日の日付を使用
-            target_date = datetime.today().date()
+            target_date = date.today()
     else:
         # パラメータがなければ今日の日付を使用
-        target_date = datetime.today().date()
+        target_date = date.today()
 
     # --- 週の計算 ---
     # 基準日をもとに、その週の日曜日を計算
@@ -204,7 +206,7 @@ def log():
 
     # HTMLテンプレートにデータを渡してレンダリング
     return render_template('log.html',
-                           today=datetime.today().date(), # 「今日」をハイライトするために別途渡す
+                           today=date.today(), # 「今日」をハイライトするために別途渡す
                            week_dates=week_dates,
                            week_range=week_range_str,
                            prev_week=prev_week_date.strftime('%Y-%m-%d'),
@@ -212,12 +214,33 @@ def log():
                            active_page='log'
                            )
 
+# app.py (points ルーティング周辺)
+
+# ... (db, get_db, get_user_profile などのインポートを前提) ...
+
 @app.route("/points")
 @login_required
 def points():
-    return render_template('points.html',
-                           active_page='points'
-                           )
+    user_id = session['user_id']
+    db = next(get_db())
+    
+    try:
+        # services.py の get_user_profile を呼び出す想定
+        profile = get_user_profile(db, user_id) 
+        total_points = profile['total_points'] if profile else 0
+        
+        return render_template('points.html',
+                               total_points=total_points,  # ★ テンプレートに渡す ★
+                               active_page='points')
+    except Exception as e:
+        print(f"ポイント取得エラー: {e}")
+        return render_template('points.html', 
+                               total_points=0, 
+                               error_message="ポイント情報の取得に失敗しました。",
+                               active_page='points')
+    finally:
+        db.close()
+
 
 @app.route("/account")
 @login_required 
@@ -250,7 +273,6 @@ def account():
     finally:
         db.close()
 
-# --- 認証機能 ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -367,11 +389,10 @@ def add_loss_record_api():
     db = next(get_db())
     try:
         # ★ 1. Pydanticでデータの検証と型変換を一度に行う ★
-        # これが必須項目の欠損、型、ビジネスルール（重量が負ではないか）を全てチェックします。
         validated_data = LossRecordInput(**data)
         
         # 2. Services層へ処理を渡す
-        record_id = add_new_loss_record(db, validated_data.model_dump()) 
+        record_id = add_new_loss_record_direct(db, validated_data.model_dump())
         # NOTE: validated_data.model_dump() でPydanticオブジェクトをPython辞書に変換して渡す
 
         return jsonify({"message": "記録完了！", "record_id": record_id}), 201
@@ -394,12 +415,6 @@ def calculate_weekly_points_api():
     
     db = next(get_db())
     try:
-        today = datetime.now()
-        week_boundaries = get_last_two_weeks(today) # 今週と先週の境界
-
-        # --- 1. 週間の合計廃棄量を取得 ---
-        this_week_grams = get_total_grams_for_weeks(db, user_id, *week_boundaries["this_week"])
-        last_week_grams = get_total_grams_for_weeks(db, user_id, *week_boundaries["last_week"])
         # ★ Services層を呼び出し、ロジックを実行させる ★
         result = calculate_weekly_points_logic(db, user_id)
         
@@ -413,6 +428,69 @@ def calculate_weekly_points_api():
         return jsonify({"message": f"ポイント計算中にエラーが発生しました: {str(e)}"}), 500
     finally:
         db.close()
+
+@app.route("/api/loss_reasons", methods=["GET"])
+def get_loss_reasons_api():
+    """フロントエンドのドロップダウンリスト用の廃棄理由を返すAPI"""
+    db = next(get_db())
+    try:
+        # Services層の関数を呼び出す
+        reasons_list = get_all_loss_reasons(db)
+        
+        return jsonify({"reasons": reasons_list}), 200
+    except Exception as e:
+        return jsonify({"message": f"理由の取得中にエラーが発生しました: {str(e)}"}), 500
+    finally:
+        db.close()
+
+@app.route("/api/user/me", methods=["GET"])
+def get_user_profile_api():
+    """ログイン中のユーザーのプロフィール情報を返すAPI"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"message": "認証が必要です。"}), 401
+    
+    db = next(get_db())
+    try:
+        profile_data = get_user_profile(db, user_id)
+        
+        if not profile_data:
+            return jsonify({"message": "ユーザーが見つかりません。"}), 404
+        
+        return jsonify(profile_data), 200
+    except Exception as e:
+        return jsonify({"message": f"プロフィールの取得中にエラーが発生しました: {str(e)}"}), 500
+    finally:
+        db.close()
+
+@app.route("/api/weekly_stats", methods=["GET"])
+def get_weekly_stats_api():
+    user_id = session.get('user_id') 
+    if not user_id:
+        return jsonify({"message": "認証が必要です。"}), 401 
+
+    # URLクエリパラメータから基準日を取得
+    date_str = request.args.get('date')
+    target_date = datetime.date.today()
+    if date_str:
+        try:
+            # log.htmlが渡す 'YYYY-MM-DD' 形式を解析
+            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass # 不正な場合は今日の日付を使用
+
+    db = next(get_db())
+    try:
+        # Services層を呼び出し、週次データを取得
+        stats_data = get_weekly_stats(db, user_id, target_date)
+        
+        return jsonify(stats_data), 200
+        
+    except Exception as e:
+        return jsonify({"message": f"統計データの取得中にエラーが発生しました: {str(e)}"}), 500
+    finally:
+        db.close()
+
 
 # --- サーバー実行 ---
 if __name__ == "__main__":

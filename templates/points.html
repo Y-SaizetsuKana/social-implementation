@@ -16,10 +16,9 @@
     <div class="container">
       <main>
         <div class="card points-status-card">
+          <p class="current-points">{{ total_points | default(10000) }}<span class="unit">P</span></p>
           <p class="card-label">所持ポイント</p>
-          <p class="current-points">100<span class="unit">P</span></p>
         </div>
-
         <div class="card exchange-list-card">
           <h2 class="card-title">交換所</h2>
           <ul class="exchange-list">
