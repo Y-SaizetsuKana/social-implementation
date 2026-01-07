@@ -28,3 +28,24 @@ class LossRecordInput(BaseModel):
         if not v.strip():
             raise ValueError('品目名を空白にすることはできません。')
         return v
+    
+    @field_validator('reason_text')
+    @classmethod
+    def reason_text_must_be_stripped(cls, v: str) -> str:
+        """廃棄理由の前後の空白を削除する"""
+        # .strip() を適用した値を返すことで、以降の処理ではクリーンな文字列が使われる
+        return v.strip()
+    
+# ---〇変更点---
+# 残った食材入力用のスキーマを追加
+class LeftoverInput(BaseModel):
+    user_id: int
+    item_name: str
+
+    @field_validator('item_name')
+    @classmethod
+    def item_name_must_not_be_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError('品目名を空白にすることはできません。')
+        return v
+# ---ここまで---

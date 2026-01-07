@@ -1,29 +1,188 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #f4f4f8;
+    background-color: #f4f4f8; /* 統一された背景色 */
     color: #333;
     margin: 0;
     padding-bottom: 80px; /* ボトムナビゲーションの高さ分 */
-}
-h1{
     text-align: center;
-    margin-top: 20px;
-}
-.textBox {
-border: 2px solid #333;
-border-radius: 5px;
-padding: 30px;
-position: relative;
-margin: 5em 2em;
+    
+    /* フッターずれ対策として横スクロールを抑制 */
+    overflow-x: hidden; 
 }
 
+main {
+    padding: 0 15px; /* 左右に余白 */
+    max-width: 500px;
+    margin: 0 auto; /* 中央寄せ */
+    box-sizing: border-box; /* パディングを含めた幅の計算 */
+}
+
+h1 {
+    font-size: 1.5em;
+    margin-top: 20px;
+    margin-bottom: 25px;
+}
+
+/* --------------------------------------- */
+/* 1. フィルタリングボタン */
+/* --------------------------------------- */
+.filter-buttons {
+    display: flex;
+    overflow-x: auto; /* 画面に収まらない場合は横スクロール */
+    gap: 10px;
+    
+    /* 親要素(main)の左右パディング15pxを相殺して、コンテンツの端まで広げる */
+    margin-left: -15px;
+    margin-right: -15px;
+    
+    /* スクロール要素の内側に、左右のパディングを再度適用 */
+    padding: 0 15px 15px 15px; 
+    
+    margin-bottom: 10px;
+    white-space: nowrap; /* ボタンが折り返さないように */
+}
+
+.filter-btn {
+    flex-shrink: 0; /* 幅が縮まないように */
+    padding: 8px 15px;
+    background-color: white;
+    color: #555;
+    border: 1px solid #ddd;
+    border-radius: 20px; /* 角丸の強いボタン */
+    font-size: 0.9em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn.active {
+    background-color: #28a745; /* アクティブカラー (緑) */
+    color: white;
+    border-color: #28a745;
+    font-weight: bold;
+}
+
+/* --------------------------------------- */
+/* 2. カードコンテナ (textBox) */
+/* --------------------------------------- */
+.textBox {
+    background-color: white;
+    border-radius: 12px;
+    padding: 15px 15px 5px 15px; /* 上下のパディングを調整 */
+    margin-bottom: 20px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    text-align: left;
+    
+    /* ★修正: 最大高さを設定し、超過した場合に内部スクロールを有効にする */
+    max-height: 60vh; /* ビューポートの高さの60%を上限とする */
+    overflow-y: auto; 
+    
+    /* iOSの慣性スクロールを有効にするための追加プロパティ */
+    -webkit-overflow-scrolling: touch; 
+}
+
+/* 以前の data-title に代わる見出しスタイル (textBox内のh2やpなどに適用) */
 .textBox::before {
-background-color: #f4f4f8;
-color: #333;
-content: attr(data-title); 
-font-weight: bold;
-left: 30px;
-padding: 3px 10px;
-position: absolute;
-top: -15px;
+    content: attr(data-title);
+    display: block;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #333;
+    margin: 0 0 10px 0;
+}
+
+/* --------------------------------------- */
+/* 3. 知識・レシピリスト */
+/* --------------------------------------- */
+.knowledge-list-container {
+    padding: 0;
+}
+
+.knowledge-item {
+    display: block;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.knowledge-item:last-child {
+    border-bottom: none;
+}
+
+.knowledge-item .title {
+    font-size: 1em;
+    color: #333;
+}
+
+.knowledge-item.hidden {
+    display: none;
+}
+
+
+/* --------------------------------------- */
+/* 4. モーダル (詳細画面) */
+/* --------------------------------------- */
+.detail-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6); 
+    padding-top: 50px; /* 少し上から表示 */
+}
+
+.detail-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 25px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.detail-content h2 {
+    font-size: 1.3em;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+.detail-content h3 {
+    font-size: 1em;
+    color: #555;
+    font-weight: normal;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+.detail-content p {
+    line-height: 1.6;
+}
+
+.close-btn {
+    color: #555;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* モーダル表示中のbodyのスクロールを止める */
+.modal-open {
+    overflow: hidden;
 }

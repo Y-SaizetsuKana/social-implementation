@@ -1,24 +1,38 @@
-# app.py (完成版)
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
-from models import User, LossReason, FoodLossRecord
-from schemas import LossRecordInput # ★ LossRecordInputをインポート
-from services import calculate_weekly_points_logic, add_new_loss_record_direct, get_weekly_stats, get_all_loss_reasons
-from datetime import datetime
+# app.py 
+from flask import Flask, request, jsonify, render_template, make_response, redirect, url_for, session
 from database import init_db, get_db
+from services import ( 
+    register_new_user, 
+    add_new_loss_record_direct, 
+    get_user_by_username, # ログイン認証用
+    calculate_weekly_points_logic, # ポイント計算ロジック
+    get_user_by_id,
+    get_weekly_stats,
+    get_all_loss_reasons,
+    add_test_loss_records
+    # ★ get_user_by_id など、services.pyで定義した関数は必要に応じてインポート
+)
+from schemas import LossRecordInput, LeftoverInput #変更点
+from datetime import datetime, timedelta, timezone, date
+from knowledge import bp as knowledge_bp
 from pydantic import ValidationError # ★ ValidationErrorをインポート
-from statistics import get_total_grams_for_weeks, get_last_two_weeks 
-from user_service import get_user_by_username, register_new_user, get_user_profile
-import datetime
+from services import get_user_profile,register_leftover_item
 
 # --- アプリケーション初期設定 ---
 app = Flask(__name__,
             template_folder='../templates',
             static_folder='../static')
 
+app.register_blueprint(knowledge_bp)
+
+# ★ 必須: セッションを使うためのSECRET_KEYを設定する ★
+# 本番環境では環境変数から読み込む必要があります
 app.secret_key = 'a_secure_and_complex_secret_key' 
 init_db()
 
-#未実装
+# --- 画面ルーティング ---
+# ★ ログイン必須のチェック（セッション確認）を追加 ★
+
 def login_required(func):
     """ログインしているかチェックするデコレータ"""
     def wrapper(*args, **kwargs):
@@ -40,10 +54,67 @@ def login_required(func):
 
 @app.route("/")
 def index():
+    # もしセッションに 'user_id' が存在する場合 (＝ログイン済みの場合)
+    if 'user_id' in session:
+        # ログインページではなく、入力ページにリダイレクトする
+        return redirect(url_for('input'))
+    
+    # ログインしていない場合のみ、login.html を表示する
     return render_template('login.html')
 
-@app.route("/input")
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """
+    GET: アカウント作成ページを表示
+    POST: アカウント作成処理を実行
+    """
+    
+    # --- POSTリクエスト（フォームが送信された）の場合 ---
+    if request.method == 'POST':
+        # 1. フォームからデータを取得
+        email = request.form.get('email')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        password_confirm = request.form.get('password_confirm')
+
+        # 2. バリデーション（入力チェック）
+        if not all([email, username, password, password_confirm]):
+            return render_template('register.html', error="すべての項目を入力してください。")
+        
+        if password != password_confirm:
+            return render_template('register.html', error="パスワードが一致しません。")
+        
+        # 3. データベース処理
+        db = next(get_db())
+        try:
+            # 4. Services層を呼び出して登録
+            register_new_user(db, username, email, password)
+            
+            # 5. 成功したらログインページにリダイレクト
+            # (注: ここで自動的にログインさせることも可能ですが、
+            #  まずは登録後に手動でログインする流れにします)
+            return redirect(url_for('login'))
+
+        except ValueError as e:
+            # 6. サービス層からのエラー（重複など）をキャッチ
+            db.rollback()
+            return render_template('register.html', error=str(e))
+        except Exception as e:
+            # その他のDBエラーなど
+            print(f"致命的なエラーが発生しました: {e}") # ⬅︎ 追加
+            db.rollback()
+            return render_template('register.html', error=f"エラーが発生しました: {str(e)}")
+        finally:
+            db.close()
+
+    # --- GETリクエスト（ページにアクセスした）の場合 ---
+    return render_template('register.html')
+
+
+
+@app.route("/input", methods=['GET', 'POST'])
 def input():
+    today = date.today()
     # --- POSTリクエスト（フォーム送信時）の処理 ---
     if request.method == 'POST':
         user_id = session.get('user_id')
@@ -65,7 +136,7 @@ def input():
             db.close()
             # 失敗時: render_template で処理を終了
             return render_template('input.html', 
-                                   today=datetime.date.today(), 
+                                   today=today, 
                                    error_message='入力内容に誤りがあります。',
                                    details=e.errors())
         
@@ -74,14 +145,16 @@ def input():
             db.close()
             # サーバーエラー時: render_template で処理を終了
             return render_template('input.html', 
-                                   today=datetime.date.today(), 
+                                   today=today, 
+                                   active_page='input',
                                    error_message=f"サーバーエラーが発生しました: {str(e)}")
         
     # --- GETリクエスト（画面表示時）の処理 ---
     # POST処理がスキップされた場合（GETの場合）のみ、このロジックが実行される
-    today = datetime.date.today()
     success_message = request.args.get('success_message')
-
+    
+    print(f"--- GETリクエスト /input ページ表示 ---") # ★デバッグ用
+    
     return render_template('input.html',
                            today=today,
                            active_page='input',
@@ -100,24 +173,24 @@ def log():
     if date_str:
         try:
             # 文字列をdateオブジェクトに変換
-            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
             # フォーマットが不正な場合は今日の日付を使用
-            target_date = datetime.date.today()
+            target_date = date.today()
     else:
         # パラメータがなければ今日の日付を使用
-        target_date = datetime.date.today()
+        target_date = date.today()
 
     # --- 週の計算 ---
     # 基準日をもとに、その週の日曜日を計算
-    start_of_week = target_date - datetime.timedelta(days=(target_date.weekday() + 1) % 7)
-    end_of_week = start_of_week + datetime.timedelta(days=6)
+    start_of_week = target_date - timedelta(days=(target_date.weekday() + 1) % 7)
+    end_of_week = start_of_week + timedelta(days=6)
 
     # --- 1週間分の日付リストを作成 ---
     week_dates = []
     jp_weekdays = ["日", "月", "火", "水", "木", "金", "土"]
     for i in range(7):
-        current_day = start_of_week + datetime.timedelta(days=i)
+        current_day = start_of_week + timedelta(days=i)
         week_dates.append({
             "date": current_day,
             "day_num": current_day.day,
@@ -126,15 +199,15 @@ def log():
 
     # --- 前週と次週の日付を計算 ---
     # 表示している週の日曜から7日前と7日後を計算
-    prev_week_date = start_of_week - datetime.timedelta(days=7)
-    next_week_date = start_of_week + datetime.timedelta(days=7)
+    prev_week_date = start_of_week - timedelta(days=7)
+    next_week_date = start_of_week + timedelta(days=7)
 
     # --- 表示用の日付範囲を作成 ---
     week_range_str = f"{start_of_week.month}月{start_of_week.day}日 〜 {end_of_week.month}月{end_of_week.day}日"
 
     # HTMLテンプレートにデータを渡してレンダリング
     return render_template('log.html',
-                           today=datetime.date.today(), # 「今日」をハイライトするために別途渡す
+                           today=date.today(), # 「今日」をハイライトするために別途渡す
                            week_dates=week_dates,
                            week_range=week_range_str,
                            prev_week=prev_week_date.strftime('%Y-%m-%d'),
@@ -142,46 +215,144 @@ def log():
                            active_page='log'
                            )
 
+# app.py (points ルーティング周辺)
+
+# ... (db, get_db, get_user_profile などのインポートを前提) ...
+
 @app.route("/points")
 @login_required
 def points():
-    return render_template('points.html',
-                           active_page='points'
-                           )
+    user_id = session['user_id']
+    db = next(get_db())
+    
+    try:
+        # services.py の get_user_profile を呼び出す想定
+        profile = get_user_profile(db, user_id) 
+        total_points = profile['total_points'] if profile else 0
+        
+        return render_template('points.html',
+                               total_points=total_points,  # ★ テンプレートに渡す ★
+                               active_page='points')
+    except Exception as e:
+        print(f"ポイント取得エラー: {e}")
+        return render_template('points.html', 
+                               total_points=0, 
+                               error_message="ポイント情報の取得に失敗しました。",
+                               active_page='points')
+    finally:
+        db.close()
 
-@app.route("/knowledge")
-@login_required
-def knowledge():
-    return render_template('knowledge.html',
-                           active_page='knowledge'
-                           )
 
 @app.route("/account")
+@login_required 
 def account():
-    return render_template('account.html',
-                           active_page='account'
-                           )
+    # 1. セッションからユーザーIDを取得
+    user_id = session['user_id']
+    
+    db = next(get_db())
+    try:
+        # 2. データベースからユーザー情報を取得
+        # (services.py の get_user_by_id 関数を使用)
+        current_user = get_user_by_id(db, user_id)
+        
+        if not current_user:
+            # 万が一、DBからユーザーが削除されていた場合
+            # 強制的にログアウトさせ、ログインページに戻す
+            session.pop('user_id', None)
+            return redirect(url_for('login'))
+
+        # 3. 取得したユーザー情報を 'user' という名前でHTMLに渡す
+        return render_template('account.html',
+                               active_page='account',
+                               user=current_user  # ★ ユーザーオブジェクトを渡す
+                               )
+    except Exception as e:
+        # DBエラーなどが発生した場合
+        return render_template('account.html',
+                               active_page='account',
+                               error="アカウント情報の取得に失敗しました。")
+    finally:
+        db.close()
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    db = next(get_db())
-    username = request.form.get('username')
-    
-    try:
-        user = get_user_by_username(db, username) # Services層でユーザーを取得
+    # POSTリクエスト（フォームが送信された）の場合
+    if request.method == 'POST':
+        db = next(get_db())
+        username = request.form.get('username')
         
-        if user:
-            # ★【テスト環境用】認証スキップとセッション保存 ★
-            session['user_id'] = user.id
-            return redirect(url_for('input'))
-        else:
-            return render_template('input.html', error="ユーザーが見つかりません。")
+        # ★ デバッグ用: POSTされたユーザー名を表示してみる ★
+        print(f"--- POSTリクエスト受信: ユーザー名 '{username}' ---")
 
-    except Exception as e:
-        return render_template('input.html', error=f"エラーが発生しました: {str(e)}")
-    finally:
-        db.close()
+        try:
+            user = get_user_by_username(db, username) 
+            
+            if user: # ログイン成功
+                session['user_id'] = user.id
+                
+                add_test_loss_records(db, user.id) 
+                
+                print(f"--- ログイン成功 (user.id: {user.id}) ---")
+                print(f"現在のセッション: {session}")
+                has_visited = request.cookies.get('first_visit')
+
+                if has_visited:
+                    # Cookieがある場合: 2回目以降のアクセス
+                    # 通常のメインコンテンツページにリダイレクトする
+                    return redirect(url_for('input'))
+                else:
+                    # Cookieがない場合: 初回アクセス
+                    # 初回起動時のみ表示するページ（テンプレート）をレンダリングする
+                    response = make_response(render_template('welcome.html'))
+
+                    # 2. Cookieを設定
+                    # 'first_visit'というキーで値を保存し、有効期限を長めに設定する（例: 1年後）
+                    # max_ageは秒単位 (365日 * 24時間 * 60分 * 60秒)
+                    JST = timezone(timedelta(hours=+9))
+                    now = datetime.now(JST)
+                    tomorrow = now.date() + timedelta(days=1)
+                    expiry_time = datetime(tomorrow.year, tomorrow.month, tomorrow.day, tzinfo=JST)
+                    response.set_cookie(
+                        'first_visit', 
+                        'true', 
+                        expires=expiry_time, # 翌日の0時を設定
+                        httponly=True
+                    )
+                    
+                    # 3. Cookieを設定したレスポンスを返す
+                    return response
+                
+            else: # ログイン失敗
+                print(f"--- ログイン失敗: ユーザー '{username}' が見つかりません ---")
+                return render_template('login.html', error="ユーザーが見つかりません。")
+
+        except Exception as e:
+            print(f"--- エラー発生: {str(e)} ---")
+            return render_template('login.html', error=f"エラーが発生しました: {str(e)}")
+        finally:
+            db.close()
+    
+    # GETリクエスト（ページにアクセスした）の場合
+    # @login_required からのリダイレクトもここに来る
+    print(f"--- GETリクエスト /login ページ表示 ---")
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required  # ログインしている人だけがサインアウトできるようにする
+def logout():
+    """サインアウト処理"""
+    
+    # 1. セッションから 'user_id' を削除する
+    # .pop(キー, デフォルト値) で、キーが存在しなくてもエラーを防ぐ
+    session.pop('user_id', None)
+    
+    response = make_response(redirect(url_for('login')))
+    response.delete_cookie('first_visit')
+    return response
+
+# --- ここまで画面ルーティング ---
+
 
 # --- API: ユーザー登録 ---
 @app.route("/api/register_user", methods=["POST"])
@@ -247,12 +418,6 @@ def calculate_weekly_points_api():
     
     db = next(get_db())
     try:
-        today = datetime.now()
-        week_boundaries = get_last_two_weeks(today) # 今週と先週の境界
-
-        # --- 1. 週間の合計廃棄量を取得 ---
-        this_week_grams = get_total_grams_for_weeks(db, user_id, *week_boundaries["this_week"])
-        last_week_grams = get_total_grams_for_weeks(db, user_id, *week_boundaries["last_week"])
         # ★ Services層を呼び出し、ロジックを実行させる ★
         result = calculate_weekly_points_logic(db, user_id)
         
@@ -309,11 +474,12 @@ def get_weekly_stats_api():
 
     # URLクエリパラメータから基準日を取得
     date_str = request.args.get('date')
-    target_date = datetime.date.today()
+    # main-test の実装を優先: シンプルに date を使う
+    target_date = date.today()
     if date_str:
         try:
             # log.htmlが渡す 'YYYY-MM-DD' 形式を解析
-            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
             pass # 不正な場合は今日の日付を使用
 
@@ -329,9 +495,53 @@ def get_weekly_stats_api():
     finally:
         db.close()
 
-@app.route("/register")
-def register_page():
-    return render_template('register.html')
+
+# ---〇変更点---
+# 1. 残った食品を入力するフォームのデータを受け取るAPI
+@app.route("/api/register_leftover", methods=["POST"])
+def register_leftover_api():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"message": "認証が必要です。"}), 401
+    
+    data = request.get_json()
+    data['user_id'] = user_id
+    
+    db = next(get_db())
+    try:
+        validated_data = LeftoverInput(**data)
+        #下一行はデバッグ用のprint文　消していい
+        print(f"登録データ: {validated_data}")
+        # サービス層を通してDBに保存
+        record_id = register_leftover_item(db, validated_data.user_id, validated_data.item_name)
+        
+        return jsonify({"message": "食材を登録しました", "id": record_id}), 201
+    except ValidationError as e:
+        return jsonify({"message": "入力データが無効です", "details": e.errors()}), 422
+    except Exception as e:
+        db.rollback()
+        return jsonify({"message": f"登録エラー: {str(e)}"}), 500
+    finally:
+        db.close()
+
+# 2. アレンジレシピのテキストデータを返すAPI
+@app.route("/api/get_arrange_recipe", methods=["POST"])
+def get_arrange_recipe_api():
+    # 本来は登録したID等を受け取るか、食材名を直接受け取る
+    # ここでは食材名(item_name)を受け取ってレシピを返す想定
+    data = request.get_json()
+    item_name = data.get("item_name")
+    
+    if not item_name:
+        return jsonify({"message": "食材名が必要です"}), 400
+        
+    try:
+        recipe_text = get_arrange_recipe_text(item_name)
+        return jsonify({"recipe": recipe_text}), 200
+    except Exception as e:
+        return jsonify({"message": f"レシピ生成エラー: {str(e)}"}), 500
+# ---ここまで---
+
 
 # --- サーバー実行 ---
 if __name__ == "__main__":

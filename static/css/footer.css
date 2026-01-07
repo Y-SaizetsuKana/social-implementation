@@ -1,4 +1,3 @@
-/* フッター */
 body {
     padding-bottom: 80px; /* ボトムナビゲーションの高さ分 */
     padding-top: 20px;
@@ -14,7 +13,7 @@ footer a:visited {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%;
+    width: 100vw; /* ★修正: ビューポート幅いっぱいに広げる */
     background-color: white;
     border-top: 1px solid #e0e0e0;
     padding: 0.6em 0;
@@ -47,4 +46,4 @@ footer a:visited {
     color: #fff; /* ★アクティブ時の文字の色 (白) */
 }
 
-/* ここまでフッター */ 
+/* ここまでフッター */

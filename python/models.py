@@ -46,6 +46,19 @@ class FoodLossRecord(Base):
     # ただし、データベースには 'TEXT'型として定義されているため、以下のように 'String' 型を維持しつつ値を設定するのが簡単です。
     record_date = Column(String(255), nullable=False, default=lambda: datetime.datetime.now().isoformat())
     
+    
     # ユーザーと廃棄理由への関係性を定義します
     user = relationship("User", back_populates="records")
     reason = relationship("LossReason", back_populates="records")
+
+#---〇変更点---
+#残ったものを記録し、アレンジレシピを提案するためのテーブルを追加しました。
+class arrange_suggest(Base):
+    __tablename__ = 'arrange_suggest'
+    id = Column(Integer, primary_key=True)
+
+    user_id = Column(Integer, ForeignKey('users.id'))
+    item_name = Column(String(255), nullable=False)
+
+    arrange_recipe = Column(Text, nullable=True)
+#---ここまで---

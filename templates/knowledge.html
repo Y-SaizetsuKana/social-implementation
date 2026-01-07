@@ -5,39 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/knowledge.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <title>テストWebアプリ</title>
 </head>
 <body>
-    <header>
-        <h1>豆知識</h1>
-    </header>
 
     <main>
-        <div class="textBox" data-title="アレンジレシピ">アレンジレシピアレンジレシピアレンジレシピアレンジレシピアレンジレシピ</div>
-        <div class="textBox" data-title="豆知識">豆知識豆知識豆知識豆知識豆知識豆知識豆知識</div>
+        
+        <h1>アレンジレシピ一覧</h1>
+        <div class="textBox" >
+            <div class="knowledge-list-container" id="recipe-list-container">
+                {% if arrange_list %}
+                    {% for item in arrange_list %}
+                    <div class="knowledge-item recipe-item" data-title="{{ item.item_name }}のアレンジ" data-content="{{ item.recipe }}">
+                        <span class="title">{{ item.item_name }}</span> 
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align:center; padding:20px; color:#666;">
+                        保存されたアレンジレシピはありません。<br>
+                        「入力」ページから残った食材を登録すると提案されます。
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        
+
+        <h1>豆知識</h1>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="料理">料理</button>
+            <button class="filter-btn" data-filter="掃除">掃除</button>
+            <button class="filter-btn" data-filter="その他">その他</button>
+            <button class="filter-btn" data-filter="全て">全て表示</button>
+        </div>
+        <div class="textBox" >
+            <div class="knowledge-list-container" id="knowledge-list-container-trivia">
+                
+                {% for item in knowledge_list %}
+                <div class="knowledge-item" data-target="detail-{{ item.id }}" data-category="{{ item.filter_group }}">
+                    <span class="title">{{ item.category }}</span> 
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </main>
 
-    <footer class="bottom-nav">
-        <a href="{{ url_for('input') }}" class="nav-item {% if active_page == 'input' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>入力</span>
-        </a>
-        <a href="{{ url_for('log') }}" class="nav-item {% if active_page == 'log' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>記録</span>
-        </a>
-        <a href="{{ url_for('knowledge') }}" class="nav-item {% if active_page == 'knowledge' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>豆知識</span>
-        </a>
-        <a href="{{ url_for('points') }}" class="nav-item {% if active_page == 'points' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>ポイント</span>
-        </a>
-        <a href="{{ url_for('account') }}" class="nav-item {% if active_page == 'account' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i>
-            <span>アカウント</span>
-        </a>
-    </footer>
+    {% for item in knowledge_list %}
+    <div id="detail-{{ item.id }}" class="detail-modal">
+    <div class="detail-content">
+        <span class="close-btn">&times;</span>
+        <h2>廃棄部分：{{ item.category }}</h2>
+        <h3>再利用方法：{{ item.title }}</h3> 
+        <p>説明：{{ item.content }}</p> 
+    </div>
+    </div>
+    {% endfor %}
+
+    <div id="recipe-dynamic-modal" class="detail-modal">
+        <div class="detail-content">
+            <span class="close-btn" id="recipe-modal-close">&times;</span>
+            <h2 id="recipe-modal-title"></h2>
+            <p id="recipe-modal-content" style="white-space: pre-wrap; margin-top: 20px;"></p> 
+        </div>
+    </div>
+    
+    {% include 'footer.html' %}
+
+    
+    <script src="{{ url_for('static', filename='js/knowledge.js') }}"></script>
 </body>
 </html>
