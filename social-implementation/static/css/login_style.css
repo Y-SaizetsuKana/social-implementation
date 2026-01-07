@@ -1,0 +1,128 @@
+* {
+  margin: 0;
+  padding: 0;
+  border: none;
+  list-style: none;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f4f4f8; /* 他の画面の背景色に統一 */
+  color: #333;
+  margin: 0;
+  padding-top: 50px;
+  padding-bottom: 50px;
+  text-align: center;
+}
+form {
+  margin: 0 auto;
+  background: white; /* カードUIとして白背景に */
+  width: 90%;
+  max-width: 380px; /* モバイルサイズに制限 */
+  text-align: center;
+  padding: 30px;
+  border-radius: 12px; /* 角丸に */
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05); /* 影を追加 */
+}
+form > h1 {
+  color: #333; /* 文字色をダークカラーに */
+  font-weight: bold;
+  margin-bottom: 25px;
+  font-size: 1.5em;
+}
+input {
+  background: #fff;
+  color: #333;
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd; /* 枠線を追加 */
+  border-radius: 8px;
+  transition: all 0.1s ease-in-out;
+  outline: none;
+  box-sizing: border-box;
+}
+input:focus {
+  border-color: #007bff; /* フォーカス色 */
+}
+::-webkit-input-placeholder {
+  color: #aaa;
+}
+:-moz-placeholder {
+  color: #aaa;
+}
+::-moz-placeholder {
+  color: #aaa;
+}
+:-ms-input-placeholder {
+  color: #aaa;
+}
+button {
+  display: block;
+  margin: 20px 0 10px 0;
+  padding: 15px;
+  width: 100%;
+  border-radius: 10px;
+  transition: all 0.1s ease-in-out;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+/* ログインボタン */
+#login-button {
+    background: #28a745; /* 緑色 (アクティブカラー) */
+    color: #f4f4f4;
+    box-shadow: 0px 3px 0px #218838;
+}
+#login-button:active {
+    position: relative;
+    top: 3px;
+    box-shadow: none;
+}
+
+/* アカウント作成/その他ボタン */
+#create-account-button {
+    background: #555; /* セカンダリカラー */
+    color: #f4f4f4;
+    box-shadow: 0px 3px 0px #444;
+}
+#create-account-button:active {
+    position: relative;
+    top: 3px;
+    box-shadow: none;
+}
+
+.head-border {
+    color: #333;
+    margin: 30px 0 20px;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+.head-border:before,
+.head-border:after {
+    content: "";
+    height: 1px;
+    flex-grow: 1;
+    background-color: #ddd;
+}
+
+.head-border:before {
+    margin-right: 1rem;
+}
+
+.head-border:after {
+    margin-left: 1rem;
+}
+
+.error-message {
+    color: #f26964;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
