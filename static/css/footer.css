@@ -4,9 +4,7 @@ body {
     padding-top: 20px;
 }
 
-footer a:visited {
-    color: inherit;
-}
+/* 不要な a:visited 指定を削除 */
 
 .bottom-nav {
     display: flex;
@@ -15,13 +13,13 @@ footer a:visited {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%; /* 100vwから100%へ変更 */
+    width: 100%;
     background-color: white;
     border-top: 1px solid #e0e0e0;
     padding: 0.6em 0;
     box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
     z-index: 1000;
-    box-sizing: border-box; /* パディングを含めて100%にする */
+    box-sizing: border-box;
 }
 
 .nav-item {
@@ -30,8 +28,13 @@ footer a:visited {
     flex-direction: column;
     align-items: center;
     text-decoration: none;
-    color: #888;
+    color: #888; /* 通常時の色（薄いグレー） */
     width: 100%;
+}
+
+/* 訪問済みであっても通常時の色を維持するように明示 */
+.nav-item:visited {
+    color: #888;
 }
 
 .nav-item i {
@@ -49,9 +52,12 @@ footer a:visited {
     white-space: nowrap;
 }
 
-.nav-item.active {
-    color: #333;
+/* アクティブな時のスタイル（!importantを付けるか、詳細度を上げて優先させる） */
+.nav-item.active,
+.nav-item.active:visited {
+    color: #333 !important; /* アクティブ時の濃い色 */
 }
+
 .nav-item.active span {
     background-color: #333;
     color: #fff;
